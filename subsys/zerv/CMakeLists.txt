@@ -4,3 +4,7 @@
 zephyr_sources_ifdef(
     CONFIG_ZERV
 )
+
+zephyr_library_include_directories(
+    .
+)

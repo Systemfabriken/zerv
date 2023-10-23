@@ -13,17 +13,48 @@
  * Copyright (c) 2023 Systemfabriken AB
  * contact: albin@systemfabriken.tech
  *===============================================================================================*/
-#ifndef _HEADER_H_
-#define _HEADER_H_
+#ifndef _ZERV_H_
+#define _ZERV_H_
 
 /*=================================================================================================
  * INCLUDES
  *===============================================================================================*/
+#include "zerv_api_impl.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*=================================================================================================
  * PUBLIC MACROS
  *===============================================================================================*/
 
+/**
+ * @brief Call a zervice command.
+ *
+ * Request service from the zervice with the given name and command name. If the call is supposed to
+ * generate a response, the response will be stored in the memory pointed to by the
+ * response_handle_name parameter.
+ *
+ * @param zervice_name The name of the zervice to call.
+ * @param command_name The name of the command to call.
+ * @param[out] return_code_name The identifier of the variable to store the return code in. The
+ * variable is defined by the macro.
+ * @param[out] response_handle_name The identifier of the pointer to the response storage, will be
+ * NULL if no response is expected. The pointer is defined by the macro.
+ * @param[in] ... The arguments to the command.
+ *
+ * @return int Is returned in the return_code_name variable which is defined by the macro.
+ */
+#define ZERV_CALL(zervice_name, command_name, return_code_name, response_handle_name, ...)         \
+	__ZERV_IMPL_CALL(zervice_name, command_name, return_code_name, response_handle_name, ...)
+
 /*=================================================================================================
  * PUBLIC FUNCTION DECLARATIONS
  *===============================================================================================*/
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* _ZERV_H_ */
