@@ -1,0 +1,27 @@
+
+# Copyright (c) 2023 Systemfabriken AB
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PUBSUB
+	bool "Enable PubSub" 
+	default n
+	select POLL
+	help
+		Enable the PubSub module
+
+
+if PUBSUB
+
+module = PUBSUB
+module-str = PubSub
+
+config PUBSUB_LOG_LEVEL
+	int "PubSub log level" 
+	default 3
+	range 0 4
+	help
+		Set the log level for the System Controller Module. 
+		0 = No Log, 1 = Error, 2 = Warning, 3 = Info, 4 = Debug 
+		
+
+endif # PUBSUB

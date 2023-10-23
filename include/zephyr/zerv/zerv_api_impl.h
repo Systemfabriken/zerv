@@ -41,13 +41,16 @@ typedef struct __zerv_response_wrapper {
  *===============================================================================================*/
 
 #define __ZERV_IMPL_CALL(zervice, command, return_code_name, response_handle_name, ...)            \
-	__##zervice##_##command##_resp_t __##command##_response;                                   \
-	__##zervice##_##command##_resp_t *response_handle_name = &__##command##_response;          \
-	int return_code_name;                                                                      \
+	__##zervice##_##command##_ret_t __##command##_response;                                    \
+	ARG_UNUSED(__##command##_response);                                                        \
+	__##zervice##_##command##_ret_t *response_handle_name = &__##command##_response;           \
+	int return_code_name = 0;                                                                  \
 	{                                                                                          \
 		__zerv_response_wrapper_t __##command##_response_wrapper = {                       \
 			.is_response_returned = false, .response_handle = response_handle_name};   \
-		__##zervice##_##command##_req_t __##command##_request = {__VA_ARGS__};             \
+		ARG_UNUSED(__##command##_response_wrapper);                                        \
+		__##zervice##_##command##_param_t __##command##_request = {__VA_ARGS__};           \
+		ARG_UNUSED(__##command##_request);                                                 \
 		if (!__##command##_response_wrapper.is_response_returned) {                        \
 			response_handle_name = NULL;                                               \
 		}                                                                                  \

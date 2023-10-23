@@ -35,17 +35,17 @@ extern "C" {
  *===============================================================================================*/
 #define __ZERV_IMPL_STRUCT_MEMBER(field) field;
 
-#define ZERV_CMD_PARAMS(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+#define ZERV_CMD_PARAM(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
 #define ZERV_CMD_RETURN(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
-#define ZERV_COMMAND_REGISTER(zervice, name, params, return)                                       \
-	typedef struct {                                                                           \
-		params                                                                             \
-	} __##zervice##_##name##_req_t;                                                            \
-	typedef struct {                                                                           \
-		return                                                                             \
-	} __##zervice##_##name##_resp_t
+#define ZERV_CMD_REGISTER(zervice, name, param, ret)                                               \
+	typedef struct __##zervice##_##name##_param {                                              \
+		param                                                                              \
+	} __##zervice##_##name##_param_t;                                                          \
+	typedef struct __##zervice##_##name##_ret {                                                \
+		ret                                                                                \
+	} __##zervice##_##name##_ret_t
 
 /**
  * @brief Call a zervice command.
@@ -54,19 +54,19 @@ extern "C" {
  * generate a response, the response will be stored in the memory pointed to by the
  * response_handle_name parameter.
  *
- * @param zervice_name The name of the zervice to call.
- * @param command_name The name of the command to call.
- * @param[out] return_code_name The identifier of the variable to store the return code in. The
+ * @param zervice The name of the zervice to call.
+ * @param cmd The name of the command to call.
+ * @param[out] retcode The identifier of the variable to store the return code in. The
  * variable is defined by the macro.
- * @param[out] response_handle_name The identifier of the pointer to the response storage, will be
+ * @param[out] p_ret The identifier of the pointer to the response storage, will be
  * NULL if no response is expected. The pointer is defined by the macro.
- * @param[in] ... The arguments to the command.
+ * @param[in] ... The arguments to the command. The arguments should follow the format
+ * specified by the ZERV_CMD_PARAM macro.
  *
- * @return int Is returned in the return_code_name variable which is defined by the macro.
+ * @return int Is returned in the ret variable which is defined by the macro.
  */
-#define ZERV_CALL(zervice_name, command_name, return_code_name, response_handle_name, ...)         \
-	__ZERV_IMPL_CALL(zervice_name, command_name, return_code_name, response_handle_name,       \
-			 ##__VA_ARGS__)
+#define ZERV_CALL(zervice, cmd, retcode, p_ret, ...)                                               \
+	__ZERV_IMPL_CALL(zervice, cmd, retcode, p_ret, ##__VA_ARGS__)
 
 /*=================================================================================================
  * PUBLIC FUNCTION DECLARATIONS
