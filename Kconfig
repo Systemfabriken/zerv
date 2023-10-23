@@ -1,0 +1,5 @@
+menu "Modules"
+
+rsource "subsys/Kconfig"
+
+endmenu

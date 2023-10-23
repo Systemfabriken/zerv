@@ -1,0 +1,7 @@
+name: zerv
+
+build:
+ cmake: .
+ kconfig: Kconfig
+ settings:
+    dts_root: .
