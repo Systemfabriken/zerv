@@ -40,22 +40,16 @@ typedef struct __zerv_response_wrapper {
  * ZERV INTERNAL PUBLIC MACROS
  *===============================================================================================*/
 
-#define __ZERV_IMPL_CALL(zervice_name, command_name, return_code_name, response_handle_name, ...)  \
-	__##zervice_name##_##command_name##_resp_t __##command_name##_response;                    \
-	__##zervice_name##_##command_name##_resp_t *response_handle_name =                         \
-		&__##command_name##_response;                                                      \
+#define __ZERV_IMPL_CALL(zervice, command, return_code_name, response_handle_name, ...)            \
+	__##zervice##_##command##_resp_t __##command##_response;                                   \
+	__##zervice##_##command##_resp_t *response_handle_name = &__##command##_response;          \
 	int return_code_name;                                                                      \
 	{                                                                                          \
-		__zerv_response_wrapper_t __##command_name##_response_wrapper = {                  \
-			.is_response_returned = false,                                             \
-			.response_handle_name = response_handle_name};                             \
-		__##zervice_name##_##command_name##_req_t __##command_name##_request = {           \
-			__VA_ARGS__};                                                              \
-		return_code_name =                                                                 \
-			__##zervice_name##_call(command_name##_id, &command_name##_request,        \
-						&__##command_name##_response_wrapper);             \
-		if (!__##command_name##_response_wrapper.is_response_returned) {                   \
-			response_handle = NULL;                                                    \
+		__zerv_response_wrapper_t __##command##_response_wrapper = {                       \
+			.is_response_returned = false, .response_handle = response_handle_name};   \
+		__##zervice##_##command##_req_t __##command##_request = {__VA_ARGS__};             \
+		if (!__##command##_response_wrapper.is_response_returned) {                        \
+			response_handle_name = NULL;                                               \
 		}                                                                                  \
 	}
 

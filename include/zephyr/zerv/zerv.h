@@ -21,6 +21,11 @@
  *===============================================================================================*/
 #include "zerv_api_impl.h"
 
+#include <stdint.h>
+#include <stddef.h>
+#include <string.h>
+#include <zephyr/kernel.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,6 +33,19 @@ extern "C" {
 /*=================================================================================================
  * PUBLIC MACROS
  *===============================================================================================*/
+#define __ZERV_IMPL_STRUCT_MEMBER(field) field;
+
+#define ZERV_CMD_PARAMS(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+
+#define ZERV_CMD_RETURN(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+
+#define ZERV_COMMAND_REGISTER(zervice, name, params, return)                                       \
+	typedef struct {                                                                           \
+		params                                                                             \
+	} __##zervice##_##name##_req_t;                                                            \
+	typedef struct {                                                                           \
+		return                                                                             \
+	} __##zervice##_##name##_resp_t
 
 /**
  * @brief Call a zervice command.
@@ -47,7 +65,8 @@ extern "C" {
  * @return int Is returned in the return_code_name variable which is defined by the macro.
  */
 #define ZERV_CALL(zervice_name, command_name, return_code_name, response_handle_name, ...)         \
-	__ZERV_IMPL_CALL(zervice_name, command_name, return_code_name, response_handle_name, ...)
+	__ZERV_IMPL_CALL(zervice_name, command_name, return_code_name, response_handle_name,       \
+			 ##__VA_ARGS__)
 
 /*=================================================================================================
  * PUBLIC FUNCTION DECLARATIONS
