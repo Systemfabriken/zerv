@@ -6,6 +6,6 @@
 
 menu "Subsystems and OS Services"
 
-source "subsys/zerv/Kconfig"
+rsource "zerv/Kconfig"
 
 endmenu

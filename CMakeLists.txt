@@ -1,4 +1,4 @@
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/drivers)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/subsys)
 zephyr_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
