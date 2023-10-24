@@ -6,17 +6,18 @@
 // #####################################################################################################################
 #ifndef _ZIT_FUTURE_CLIENT_SERVICE_H_
 #define _ZIT_FUTURE_CLIENT_SERVICE_H_
-// INCLUDES
-// ###########################################################################################################
-#include "zit_serv.h" // Include the Zephyr Inter Thread Service (ZIT) header.
+/*=================================================================================================
+ * INCLUDES
+ *===============================================================================================*/
+#include <zephyr/zerv/zerv.h> // Include the Zephyr Inter Thread Service (ZIT) header.
 
 // PUBLIC DECLARATIONS
 // ################################################################################################
 
-ZERV_CMD_DECL(call_future_echo, ZERV_IN(zit_rc_t expected_rc), ZERV_OUT(bool was_expected_rc));
-ZERV_CMD_DECL(call_other, ZERV_IN(zit_rc_t expected_rc), ZERV_OUT(bool was_expected_rc));
+ZERV_CMD_DECL(call_future_echo, ZERV_IN(zerv_rc_t expected_rc), ZERV_OUT(bool was_expected_rc));
+ZERV_CMD_DECL(call_other, ZERV_IN(zerv_rc_t expected_rc), ZERV_OUT(bool was_expected_rc));
 
 // Declare the service.
-ZIT_SERV_DECL(future_client, call_future_echo, call_other);
+ZERV_DECL(future_client, call_future_echo, call_other);
 
 #endif // _ZIT_FUTURE_CLIENT_SERVICE_H_

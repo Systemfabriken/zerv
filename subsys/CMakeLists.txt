@@ -1,4 +1,3 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory_ifdef(CONFIG_ZERV zerv)
-add_subdirectory_ifdef(CONFIG_PUBSUB pubsub)

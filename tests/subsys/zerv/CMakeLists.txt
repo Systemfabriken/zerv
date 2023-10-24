@@ -8,10 +8,10 @@ project(test_unit)
 
 target_sources(app PRIVATE 
   ${CMAKE_CURRENT_SOURCE_DIR}/test_main.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/zit_test_service.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/zit_test_service_poll.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/zit_test_future_service.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/zit_future_client_service.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/zerv_test_service.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/zerv_test_service_poll.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/zerv_test_future_service.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/zerv_future_client_service.c
 )
 
 target_include_directories(app PRIVATE 

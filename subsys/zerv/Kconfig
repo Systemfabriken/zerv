@@ -1,12 +1,27 @@
+
 # Copyright (c) 2023 Systemfabriken AB
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ZERV
-        bool "Zerv"
+	bool "Enable Zerv" 
+	default n
+	select POLL
+	help
+		Enable the Zerv module
+
 
 if ZERV
 
 module = ZERV
 module-str = Zerv
+
+config ZERV_LOG_LEVEL
+	int "Zerv log level" 
+	default 3
+	range 0 4
+	help
+		Set the log level for the Zerv Module. 
+		0 = No Log, 1 = Error, 2 = Warning, 3 = Info, 4 = Debug 
+		
 
 endif # ZERV

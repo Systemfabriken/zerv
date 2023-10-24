@@ -1,10 +1,9 @@
-# Copyright (c) 2023 Systemfabriken AB
-# SPDX-License-Identifier: Apache-2.0
-
-zephyr_sources_ifdef(
-    CONFIG_ZERV
+target_sources_ifdef(CONFIG_ZERV app PRIVATE 
+  ${CMAKE_CURRENT_SOURCE_DIR}/sub.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/pub.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/zerv_internal.c
 )
 
-zephyr_library_include_directories(
-    .
-)
+if(DEFINED CONFIG_ZERV)
+  target_include_directories(app PRIVATE .)
+endif()

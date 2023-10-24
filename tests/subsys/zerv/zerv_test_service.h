@@ -6,9 +6,10 @@
 // #####################################################################################################################
 #ifndef _ZIT_TEST_SERVICE_H_
 #define _ZIT_TEST_SERVICE_H_
-// INCLUDES
-// ###########################################################################################################
-#include "zit_serv.h" // Include the Zephyr Inter Thread Service (ZIT) header.
+/*=================================================================================================
+ * INCLUDES
+ *===============================================================================================*/
+#include <zephyr/zerv/zerv.h> // Include the Zephyr Inter Thread Service (ZIT) header.
 
 // PUBLIC DECLARATIONS
 // ################################################################################################
@@ -24,6 +25,6 @@ ZERV_CMD_DECL(echo, ZERV_IN(char str[30]), ZERV_OUT(char str[30]));
 ZERV_CMD_DECL(fail, ZERV_IN(int dummy), ZERV_OUT(int dummy));
 
 // Declare the service.
-ZIT_SERV_DECL(zit_test_service, get_hello_world, echo, fail);
+ZERV_DECL(zerv_test_service, get_hello_world, echo, fail);
 
 #endif // _ZIT_TEST_SERVICE_H_

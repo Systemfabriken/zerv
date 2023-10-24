@@ -8,11 +8,11 @@
 //  ###########################################################################################################
 #include "pub.h"
 #include "sub.h"
-#include "zit_test_service.h"
-#include "zit_test_service_poll.h"
-#include "zit_test_future_service.h"
-#include "zit_future_client_service.h"
-#include "zit_client.h"
+#include "zerv_test_service.h"
+#include "zerv_test_service_poll.h"
+#include "zerv_test_future_service.h"
+#include "zerv_future_client_service.h"
+#include <zephyr/zerv/zerv.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -49,9 +49,9 @@ void test_polling(void);
 void test_no_subscribers(void);
 void test_pub_sub(void);
 void test_pub_sub_no_buffer(void);
-void test_zit_get_hello_world(void);
-void test_zit_service_poll(void);
-void test_zit_future_service(void);
+void test_zerv_get_hello_world(void);
+void test_zervice_poll(void);
+void test_zerv_future_service(void);
 
 // PROGRAM ENTRY
 // ######################################################################################################
@@ -77,8 +77,8 @@ void test_main(void)
 	ztest_test_suite(
 		pubsub_test, ztest_unit_test(test_pub_sub), ztest_unit_test(test_polling),
 		ztest_unit_test(test_no_subscribers), ztest_unit_test(test_pub_sub_no_buffer),
-		ztest_unit_test(test_zit_get_hello_world), ztest_unit_test(test_zit_service_poll),
-		ztest_unit_test(test_zit_future_service));
+		ztest_unit_test(test_zerv_get_hello_world), ztest_unit_test(test_zervice_poll),
+		ztest_unit_test(test_zerv_future_service));
 	ztest_run_test_suite(pubsub_test);
 
 	LOG_PRINTK("\n\n");
@@ -407,10 +407,10 @@ void test_pub_sub_no_buffer(void)
 	k_sem_take(&sub5_sem, K_FOREVER);
 }
 
-void test_zit_get_hello_world(void)
+void test_zerv_get_hello_world(void)
 {
 	{
-		ZERV_CALL(zit_test_service, get_hello_world, rc, p_ret, 10, 20);
+		ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20);
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(p_ret->a, 10, NULL);
 		zassert_equal(p_ret->b, 20, NULL);
@@ -418,129 +418,89 @@ void test_zit_get_hello_world(void)
 	}
 
 	{
-		ZERV_CALL(zit_test_service, echo, rc, p_ret, "Hello World!");
+		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
 	}
 
 	{
-		ZERV_CALL(zit_test_service, echo, rc, p_ret, "Hello World! 2");
+		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World! 2");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World! 2"), 0, NULL);
 	}
 
 	{
-		ZERV_CALL(zit_test_service, fail, rc, p_ret);
-		zassert_equal(rc, ZIT_RC_ERROR, NULL);
+		ZERV_CALL(zerv_test_service, fail, rc, p_ret);
+		zassert_equal(rc, ZERV_RC_ERROR, NULL);
 	}
 }
 
-void test_zit_service_poll(void)
+void test_zervice_poll(void)
 {
 	PRINTLN("Sending echo1 request");
-	echo1_ret_t echo1_resp = {0};
-
-	int rc = zit_client_call(zit_poll_service_1, echo1,
-				 (&(echo1_param_t){.str = "Hello World!"}), &echo1_resp);
-	zassert_equal(rc, 0, NULL);
-	zassert_equal(strcmp(echo1_resp.str, "Hello World!"), 0, NULL);
+	{
+		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!");
+		zassert_equal(rc, 0, NULL);
+		zassert_equal(strcmp(echo1_resp->str, "Hello World!"), 0, NULL);
+	}
 
 	PRINTLN("Sending echo2 request");
-	echo2_ret_t echo2_resp = {0};
-	rc = zit_client_call(zit_poll_service_2, echo2, (&(echo2_param_t){.str = "Hello World!"}),
-			     &echo2_resp);
-	zassert_equal(rc, 0, NULL);
-	zassert_equal(strcmp(echo2_resp.str, "Hello World!"), 0, NULL);
+	{
+		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!");
+		zassert_equal(rc, 0, NULL);
+		zassert_equal(strcmp(echo2_resp->str, "Hello World!"), 0, NULL);
+	}
 
 	PRINTLN("Sending echo1 request");
-	rc = zit_client_call(zit_poll_service_1, echo1, (&(echo1_param_t){.str = "Hello World! 2"}),
-			     &echo1_resp);
-	zassert_equal(rc, 0, NULL);
-	zassert_equal(strcmp(echo1_resp.str, "Hello World! 2"), 0, NULL);
+	{
+		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2")
+		zassert_equal(rc, 0, NULL);
+		zassert_equal(strcmp(echo1_resp->str, "Hello World! 2"), 0, NULL);
+	}
 
 	PRINTLN("Sending echo2 request");
-	rc = zit_client_call(zit_poll_service_2, echo2, (&(echo2_param_t){.str = "Hello World! 2"}),
-			     &echo2_resp);
-	zassert_equal(rc, 0, NULL);
-	zassert_equal(strcmp(echo2_resp.str, "Hello World! 2"), 0, NULL);
+	{
+		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2");
+		zassert_equal(rc, 0, NULL);
+		zassert_equal(strcmp(echo2_resp->str, "Hello World! 2"), 0, NULL);
+	}
 
 	PRINTLN("Sending fail1 request");
-	rc = zit_client_call(zit_poll_service_1, fail1, &(fail1_param_t){.dummy = 0},
-			     &(fail1_ret_t){0});
-	zassert_equal(rc, ZIT_RC_ERROR, NULL);
+	{
+		ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret);
+		zassert_equal(rc, ZERV_RC_ERROR, NULL);
+	}
 
 	PRINTLN("Sending fail2 request");
-	rc = zit_client_call(zit_poll_service_2, fail2, &(fail2_param_t){.dummy = 0},
-			     &(fail2_ret_t){0});
-	zassert_equal(rc, ZIT_RC_ERROR, NULL);
-
-	PRINTLN("Sending NULL request");
-	rc = zit_client_call(zit_poll_service_1, echo1, NULL, &echo1_resp);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL request");
-	rc = zit_client_call(zit_poll_service_2, echo2, NULL, &echo2_resp);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL response");
-	rc = zit_client_call(zit_poll_service_1, echo1, (&(echo1_param_t){.str = "Hello World!"}),
-			     NULL);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL response");
-	rc = zit_client_call(zit_poll_service_2, echo2, (&(echo2_param_t){.str = "Hello World!"}),
-			     NULL);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL request and response");
-	rc = zit_client_call(zit_poll_service_1, echo1, NULL, NULL);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL request and response");
-	rc = zit_client_call(zit_poll_service_2, echo2, NULL, NULL);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL request");
-	rc = zit_client_call(zit_poll_service_1, fail1, NULL, &(fail1_ret_t){0});
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL request");
-	rc = zit_client_call(zit_poll_service_2, fail2, NULL, &(fail2_ret_t){0});
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL response");
-	rc = zit_client_call(zit_poll_service_1, fail1, &(fail1_param_t){.dummy = 0}, NULL);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
-
-	PRINTLN("Sending NULL response");
-	rc = zit_client_call(zit_poll_service_2, fail2, &(fail2_param_t){.dummy = 0}, NULL);
-	zassert_equal(rc, ZIT_RC_NULLPTR, NULL);
+	{
+		ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret);
+		zassert_equal(rc, ZERV_RC_ERROR, NULL);
+	}
 }
 
 K_SEM_DEFINE(future_sem, 0, 1);
 void on_future_cb(void)
 {
 	future_echo_ret_t future_echo_resp = {0};
-	zit_rc_t rc =
-		zit_client_get_future(future_service, future_echo, &future_echo_resp, K_NO_WAIT);
+	zerv_rc_t rc = zerv_get_future(future_service, future_echo, &future_echo_resp, K_NO_WAIT);
 	PRINTLN("Future response received: %s, rc: %d", future_echo_resp.str, rc);
 	k_sem_give(&future_sem);
 }
 
-void test_zit_future_service(void)
+void test_zerv_future_service(void)
 {
-	extern struct zit_service future_service;
-	struct zit_serv_req_instance *future_echo_instance =
-		future_service.req_instances[__future_echo_id];
+	extern zervice_t future_service;
+	struct zerv_req_instance *future_echo_instance =
+		future_service.cmd_instances[__future_echo_id];
 
 	PRINTLN("Sending syncronous echo request");
 	future_echo_ret_t future_echo_resp = {0};
-	zit_rc_t rc = zit_client_call(
-		future_service, future_echo,
-		(&(future_echo_param_t){.is_delayed = false, .str = "Hello World!"}),
-		&future_echo_resp);
+	zerv_rc_t rc =
+		zerv_call(future_service, future_echo,
+			  (&(future_echo_param_t){.is_delayed = false, .str = "Hello World!"}),
+			  &future_echo_resp);
 
-	zassert_equal(rc, ZIT_RC_OK);
+	zassert_equal(rc, ZERV_RC_OK);
 	zassert_equal(strcmp(future_echo_resp.str, "Hello World!"), 0);
 	zassert_equal(future_echo_instance->future.is_active, false);
 	zassert_is_null(future_echo_instance->future.req_params);
@@ -550,8 +510,8 @@ void test_zit_future_service(void)
 	PRINTLN("Sending asyncronous echo request and blocking until it is handled");
 	future_echo_param_t params = {
 		.is_delayed = true, .delay = K_MSEC(100), .str = "Async Hello Blocking!"};
-	rc = zit_client_call(future_service, future_echo, &params, &future_echo_resp);
-	zassert_equal(rc, ZIT_RC_FUTURE);
+	rc = zerv_call(future_service, future_echo, &params, &future_echo_resp);
+	zassert_equal(rc, ZERV_RC_FUTURE);
 	zassert_true(future_echo_instance->future.is_active);
 	zassert_not_null(future_echo_instance->future.req_params);
 	zassert_not_null(future_echo_instance->future.resp);
@@ -560,9 +520,9 @@ void test_zit_future_service(void)
 	zassert_mem_equal(p_params, &params, sizeof(future_echo_param_t));
 
 	PRINTLN("Waiting for asyncronous echo request to be handled");
-	rc = zit_client_get_future(future_service, future_echo, &future_echo_resp, K_FOREVER);
+	rc = zerv_get_future(future_service, future_echo, &future_echo_resp, K_FOREVER);
 	PRINTLN("Asyncronous echo request handled");
-	zassert_equal(rc, ZIT_RC_OK);
+	zassert_equal(rc, ZERV_RC_OK);
 	zassert_equal(strcmp(future_echo_resp.str, "Async Hello Blocking!"), 0);
 	zassert_equal(future_echo_instance->future.is_active, false);
 	zassert_is_null(future_echo_instance->future.req_params);
@@ -571,14 +531,14 @@ void test_zit_future_service(void)
 	PRINTLN("Sending asyncronous echo request and polling until it is handled");
 	params = (future_echo_param_t){
 		.is_delayed = true, .delay = K_MSEC(100), .str = "Async Hello Polling!"};
-	rc = zit_client_call(future_service, future_echo, &params, &future_echo_resp);
-	zassert_equal(rc, ZIT_RC_FUTURE);
+	rc = zerv_call(future_service, future_echo, &params, &future_echo_resp);
+	zassert_equal(rc, ZERV_RC_FUTURE);
 	zassert_true(future_echo_instance->future.is_active);
 	zassert_not_null(future_echo_instance->future.req_params);
 	zassert_not_null(future_echo_instance->future.resp);
 	static int cnt = 0;
-	while ((rc = zit_client_get_future(future_service, future_echo, &future_echo_resp,
-					   K_NO_WAIT)) == ZIT_RC_TIMEOUT) {
+	while ((rc = zerv_get_future(future_service, future_echo, &future_echo_resp, K_NO_WAIT)) ==
+	       ZERV_RC_TIMEOUT) {
 		zassert_true(future_echo_instance->future.is_active);
 		zassert_not_null(future_echo_instance->future.req_params);
 		zassert_not_null(future_echo_instance->future.resp);
@@ -587,11 +547,11 @@ void test_zit_future_service(void)
 		if (cnt == 5) {
 			PRINTLN("Sending another request to the same service");
 			call_other_ret_t call_other_resp = {0};
-			zit_rc_t client_call_rc =
-				zit_client_call(future_client, call_other,
-						(&(call_other_param_t){.expected_rc = ZIT_RC_OK}),
-						&call_other_resp);
-			zassert_equal(client_call_rc, ZIT_RC_OK);
+			zerv_rc_t client_call_rc =
+				zerv_call(future_client, call_other,
+					  (&(call_other_param_t){.expected_rc = ZERV_RC_OK}),
+					  &call_other_resp);
+			zassert_equal(client_call_rc, ZERV_RC_OK);
 			zassert_true(call_other_resp.was_expected_rc);
 			PRINTLN("Another request to the same service sent and handled");
 		}
@@ -599,7 +559,7 @@ void test_zit_future_service(void)
 		k_sleep(K_MSEC(10));
 	}
 	PRINTLN("Asyncronous echo request handled");
-	zassert_equal(rc, ZIT_RC_OK);
+	zassert_equal(rc, ZERV_RC_OK);
 	zassert_equal(strcmp(future_echo_resp.str, "Async Hello Polling!"), 0);
 	zassert_equal(future_echo_instance->future.is_active, false);
 	zassert_is_null(future_echo_instance->future.req_params);
@@ -607,10 +567,10 @@ void test_zit_future_service(void)
 	PRINTLN("Calling asynchronous request from another thread");
 	call_future_echo_ret_t call_future_echo_resp = {0};
 	call_future_echo_resp.on_delayed_response = on_future_cb;
-	rc = zit_client_call(future_client, call_future_echo,
-			     (&(call_future_echo_param_t){.expected_rc = ZIT_RC_OK}),
-			     &call_future_echo_resp);
-	zassert_equal(rc, ZIT_RC_OK);
+	rc = zerv_call(future_client, call_future_echo,
+		       (&(call_future_echo_param_t){.expected_rc = ZERV_RC_OK}),
+		       &call_future_echo_resp);
+	zassert_equal(rc, ZERV_RC_OK);
 	zassert_true(call_future_echo_resp.was_expected_rc);
 
 	PRINTLN("Sending asyncronous echo request and handling response in callback");
@@ -618,8 +578,8 @@ void test_zit_future_service(void)
 		.is_delayed = true, .delay = K_MSEC(100), .str = "Async Hello Callback!"};
 	future_echo_ret_t future_echo_resp2 = {0};
 	future_echo_resp2.on_delayed_response = on_future_cb;
-	rc = zit_client_call(future_service, future_echo, &params, &future_echo_resp2);
-	zassert_equal(rc, ZIT_RC_FUTURE);
+	rc = zerv_call(future_service, future_echo, &params, &future_echo_resp2);
+	zassert_equal(rc, ZERV_RC_FUTURE);
 	zassert_true(future_echo_instance->future.is_active);
 	zassert_not_null(future_echo_instance->future.req_params);
 	zassert_not_null(future_echo_instance->future.resp);

@@ -1,0 +1,63 @@
+@startuml zerv_synchronous_request_handling
+skinparam {
+    sequenceArrowThickness 2
+    roundcorner 12
+    SequenceGroupBodyBackgroundColor 01FF0110
+    maxmessagesize 200
+}
+
+participant client_thread as client
+
+
+box "zerv framework implementation" #LightGray
+    participant zerv_api as zerv_api
+    queue zerv_queue as zerv_queue
+    participant zerv_thread as zerv_thread
+    participant zerv_req_handler as zerv_req_handler
+    participant req1_handler
+end box
+
+participant scheduler as sched
+
+== Zit thread ==
+
+' Initialisation
+activate zerv_thread
+zerv_thread -> zerv_queue ++: k_fifo_get
+zerv_queue --> sched --++: wait for zerv_req (blocking zit thread)
+deactivate zerv_thread
+
+== Client thread ==
+
+sched -> client --++: schedule
+
+' Client request call
+client -> zerv_api ++: zerv.req1: param, *resp 
+zerv_api -> zerv_api: lock req1 mutex
+zerv_api ->o zerv_queue: k_fifo_put: zerv_req*
+zerv_api --> sched --++: k_sem_take: response_sem (client thread blocked)
+deactivate client
+
+== Zit thread ==
+
+' zerv request handling
+sched -> zerv_queue --++: schedule
+activate zerv_thread
+zerv_queue --> zerv_thread --: zerv_req*
+zerv_thread -> zerv_req_handler ++: zerv_req*
+zerv_req_handler -> req1_handler --++: handle_request: param, *resp
+rnote over req1_handler: do non-blocking work\nand update *resp
+req1_handler --> zerv_req_handler --++: return code
+zerv_req_handler --> sched --++: k_sem_give: response_sem (blocking zit thread)
+deactivate zerv_thread
+
+== Client thread ==
+
+' Client response handling
+sched -> zerv_api --++: schedule
+activate client
+zerv_api -> zerv_api: unlock req1 mutex
+zerv_api --> client --: return code
+rnote over client: Data in *resp\nis now available
+
+@enduml
