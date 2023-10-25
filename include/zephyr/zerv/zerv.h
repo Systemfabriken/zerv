@@ -55,19 +55,25 @@
  * @param[out] p_ret The identifier of the pointer to the response storage, will be
  * NULL if no response is expected. The pointer is defined by the macro.
  * @param[in] ... The arguments to the command. The arguments should follow the format
- * specified by the ZERV_CMD_PARAM macro.
+ * specified by the ZERV_CMD_PARAM macro. The last argument should be the code block to
+ * execute when the response is received. The code block should be surrounded by curly
+ * brackets.
  *
  * @return int Is returned in the ret variable which is defined by the macro.
  */
 #define ZERV_CALL(zervice, cmd, retcode, p_ret, ...)                                               \
-	cmd##_ret_t __##cmd##_response;                                                            \
-	cmd##_ret_t *p_ret = &__##cmd##_response;                                                  \
-	zerv_rc_t retcode = 0;                                                                     \
 	{                                                                                          \
-		cmd##_param_t __##cmd##_request = {__VA_ARGS__};                                   \
-		retcode = zerv_internal_client_request_handler(                                    \
-			&zervice, &__##cmd, sizeof(cmd##_param_t), &__##cmd##_request,             \
-			(struct zerv_resp_base *)p_ret, sizeof(cmd##_ret_t));                      \
+		cmd##_ret_t __##cmd##_response;                                                    \
+		cmd##_ret_t *p_ret = &__##cmd##_response;                                          \
+		zerv_rc_t retcode = 0;                                                             \
+		{                                                                                  \
+			cmd##_param_t __##cmd##_request = {                                        \
+				REVERSE_ARGS(GET_ARGS_LESS_N(1, REVERSE_ARGS(__VA_ARGS__)))};      \
+			retcode = zerv_internal_client_request_handler(                            \
+				&zervice, &__##cmd, sizeof(cmd##_param_t), &__##cmd##_request,     \
+				(struct zerv_resp_base *)p_ret, sizeof(cmd##_ret_t));              \
+		}                                                                                  \
+		GET_ARG_N(1, REVERSE_ARGS(__VA_ARGS__));                                           \
 	}
 
 /**
@@ -151,7 +157,7 @@
 	static K_FIFO_DEFINE(__##zervice##_fifo);                                                  \
 	static K_MUTEX_DEFINE(__##zervice##_mtx);                                                  \
 	__ZERV_DEFINE_REQUEST_INSTANCE_LIST(zervice, __VA_ARGS__)                                  \
-	zervice_t zervice __aligned(4) = {                                                    \
+	zervice_t zervice __aligned(4) = {                                                         \
 		.name = #zervice,                                                                  \
 		.heap = &__##zervice##_heap,                                                       \
 		.fifo = &__##zervice##_fifo,                                                       \

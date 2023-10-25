@@ -409,73 +409,59 @@ void test_pub_sub_no_buffer(void)
 
 void test_zerv_get_hello_world(void)
 {
-	{
-		ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20);
+	ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20, {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(p_ret->a, 10, NULL);
 		zassert_equal(p_ret->b, 20, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
-	}
+	});
 
-	{
-		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!");
+	ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
-	}
+	});
 
-	{
-		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World! 2");
+	ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World! 2", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World! 2"), 0, NULL);
-	}
+	});
 
-	{
-		ZERV_CALL(zerv_test_service, fail, rc, p_ret);
-		zassert_equal(rc, ZERV_RC_ERROR, NULL);
-	}
+	ZERV_CALL(zerv_test_service, fail, rc, p_ret, { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
 }
 
 void test_zervice_poll(void)
 {
 	PRINTLN("Sending echo1 request");
-	{
-		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!");
+	ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World!"), 0, NULL);
-	}
+	});
 
 	PRINTLN("Sending echo2 request");
-	{
-		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!");
+	ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World!"), 0, NULL);
-	}
+	});
 
 	PRINTLN("Sending echo1 request");
-	{
-		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2")
+	ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World! 2"), 0, NULL);
-	}
+	});
 
 	PRINTLN("Sending echo2 request");
-	{
-		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2");
+	ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World! 2"), 0, NULL);
-	}
+	});
 
 	PRINTLN("Sending fail1 request");
-	{
-		ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret);
-		zassert_equal(rc, ZERV_RC_ERROR, NULL);
-	}
+	ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret,
+		  { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
 
 	PRINTLN("Sending fail2 request");
-	{
-		ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret);
-		zassert_equal(rc, ZERV_RC_ERROR, NULL);
-	}
+	ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret,
+		  { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
 }
 
 K_SEM_DEFINE(future_sem, 0, 1);
