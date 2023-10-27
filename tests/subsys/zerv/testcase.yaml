@@ -1,0 +1,9 @@
+tests:
+  inter_thread.zerv.module_interaction_no_error:
+    platform_exclude:
+      - hifive_unleashed
+      - fvp_base_revc_2xaemv8a_smp_ns
+      - native_posix
+    tags: zerv
+    integration_platforms:
+      - native_sim

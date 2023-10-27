@@ -1,11 +1,4 @@
-// #####################################################################################################################
-// # # #                              Copyright (C) 2023 DevPort Ost AB, all rights reserved. # #
-// Unauthorized copying of this file, via any medium is strictly prohibited.                     #
-// #                                           Proprietary and confidential. # # # # author:  Albin
-// Hjalmas # # company: Systemfabriken # # contact: albin@systemfabriken.tech #
-// #####################################################################################################################
-//  INCLUDES
-//  ###########################################################################################################
+
 #include "pub.h"
 #include "sub.h"
 #include "zerv_test_service.h"
@@ -22,39 +15,27 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/auxiliary/utils.h>
 
-// PRIVATE DECLARATIONS
-// ###############################################################################################
 LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
 PUB_DEFINE(pub1);
 PUB_DEFINE(pub2);
-SUB_DEFINE(sub1, 256);
-SUB_DEFINE(sub2, 256);
-SUB_DEFINE(sub3, 256);
-SUB_DEFINE(sub4, 256);
+SUB_DEFINE(sub1, 128);
+SUB_DEFINE(sub2, 128);
+SUB_DEFINE(sub3, 128);
+SUB_DEFINE(sub4, 128);
 
 // No buffer publisher
 PUB_DEFINE(pub3);
-SUB_DEFINE(sub5, 256);
+SUB_DEFINE(sub5, 200);
 
 // Even though the publisher is never defined the below line should compile
-SUB_DEFINE(dummy_subscriber, 256);
+SUB_DEFINE(dummy_subscriber, 0);
 
 // Define a publisher with no subscribers
 PUB_DEFINE(lone_publisher);
 
-// PRIVATE FUNCTION DECLARATIONS
-// ######################################################################################
-void test_polling(void);
-void test_no_subscribers(void);
-void test_pub_sub(void);
-void test_pub_sub_no_buffer(void);
-void test_zerv_get_hello_world(void);
-void test_zervice_poll(void);
-void test_zerv_future_service(void);
+ZTEST_SUITE(zerv_test, NULL, NULL, NULL, NULL, NULL);
 
-// PROGRAM ENTRY
-// ######################################################################################################
 void test_main(void)
 {
 	PRINTLN("Starting test_main");
@@ -73,23 +54,13 @@ void test_main(void)
 
 	k_sleep(K_MSEC(100));
 
-	// Run tests
-	ztest_test_suite(
-		pubsub_test, ztest_unit_test(test_pub_sub), ztest_unit_test(test_polling),
-		ztest_unit_test(test_no_subscribers), ztest_unit_test(test_pub_sub_no_buffer),
-		ztest_unit_test(test_zerv_get_hello_world), ztest_unit_test(test_zervice_poll),
-		ztest_unit_test(test_zerv_future_service));
-	ztest_run_test_suite(pubsub_test);
-
+	ztest_run_test_suite(zerv_test);
 	LOG_PRINTK("\n\n");
 }
 
-// TESTS
-// ##############################################################################################################
-
 static bool polling_test_2 = false;
 
-char sub_1_msg[100];
+char sub_1_msg[50];
 void sub1_thread(void)
 {
 	PRINTLN("sub1_thread started");
@@ -102,9 +73,9 @@ void sub1_thread(void)
 		PRINTLN("from publisher %s sub1 received: %s", p_pub->name, sub_1_msg);
 	}
 }
-K_THREAD_DEFINE(sub1_thread_id, 1024, (k_thread_entry_t)sub1_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(sub1_thread_id, 256, (k_thread_entry_t)sub1_thread, NULL, NULL, NULL, 5, 0, 0);
 
-char sub_2_msg[100];
+char sub_2_msg[50];
 void sub2_thread(void)
 {
 	PRINTLN("sub2_thread started");
@@ -117,9 +88,9 @@ void sub2_thread(void)
 		PRINTLN("from publisher %s received: %s", p_pub->name, sub_2_msg);
 	}
 }
-K_THREAD_DEFINE(sub2_thread_id, 1024, (k_thread_entry_t)sub2_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(sub2_thread_id, 256, (k_thread_entry_t)sub2_thread, NULL, NULL, NULL, 5, 0, 0);
 
-char sub_3_msg[100];
+char sub_3_msg[50];
 void sub3_thread(void)
 {
 	PRINTLN("sub3_thread started");
@@ -132,9 +103,9 @@ void sub3_thread(void)
 		PRINTLN("from publisher %s sub3 received: %s", p_pub->name, sub_3_msg);
 	}
 }
-K_THREAD_DEFINE(sub3_thread_id, 1024, (k_thread_entry_t)sub3_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(sub3_thread_id, 256, (k_thread_entry_t)sub3_thread, NULL, NULL, NULL, 5, 0, 0);
 
-char sub_4_msg[100];
+char sub_4_msg[50];
 void sub4_thread(void)
 {
 	PRINTLN("sub4_thread started");
@@ -147,9 +118,9 @@ void sub4_thread(void)
 		PRINTLN("from publisher %s sub4 received: %s", p_pub->name, sub_4_msg);
 	}
 }
-K_THREAD_DEFINE(sub4_thread_id, 1024, (k_thread_entry_t)sub4_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(sub4_thread_id, 256, (k_thread_entry_t)sub4_thread, NULL, NULL, NULL, 5, 0, 0);
 
-char sub_5_msg[100];
+char sub_5_msg[50];
 static bool dont_free_message = false;
 static bool dont_receive_message = false;
 K_SEM_DEFINE(sub5_sem, 0, 1);
@@ -183,7 +154,7 @@ void sub5_thread(void)
 		k_sem_give(&sub5_sem);
 	}
 }
-K_THREAD_DEFINE(sub5_thread_id, 1024, (k_thread_entry_t)sub5_thread, NULL, NULL, NULL, 5, 0, 0);
+K_THREAD_DEFINE(sub5_thread_id, 256, (k_thread_entry_t)sub5_thread, NULL, NULL, NULL, 5, 0, 0);
 
 K_SEM_DEFINE(test_polling_sem, 0, 1);
 void test_polling_thread(void)
@@ -230,10 +201,10 @@ void test_polling_thread(void)
 		events[3].state = K_POLL_STATE_NOT_READY;
 	}
 }
-K_THREAD_DEFINE(test_polling_thread_id, 2048, (k_thread_entry_t)test_polling_thread, NULL, NULL,
+K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thread, NULL, NULL,
 		NULL, 5, 0, 0);
 
-void test_polling(void)
+ZTEST(zerv_test, test_polling)
 {
 	// Exit all the threads
 	polling_test_2 = true;
@@ -288,7 +259,7 @@ void test_polling(void)
 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
 }
 
-void test_no_subscribers(void)
+ZTEST(zerv_test, test_no_subscribers)
 {
 	// Exit all the threads
 	char msg[50] = "Testing no subscribers!";
@@ -298,11 +269,11 @@ void test_no_subscribers(void)
 	zassert_equal(rc, 0, NULL);
 }
 
-void test_pub_sub(void)
+ZTEST(zerv_test, test_pub_sub)
 {
 	k_sleep(K_MSEC(100));
 	// Test data
-	char msg[100] = "Hello world!";
+	char msg[50] = "Hello world!";
 	int rc;
 	PRINTLN("Publishing: %s", msg);
 	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
@@ -350,7 +321,7 @@ void test_pub_sub(void)
 	zassert_equal(rc, -EINVAL, NULL);
 }
 
-void test_pub_sub_no_buffer(void)
+ZTEST(zerv_test, test_pub_sub_no_buffer)
 {
 	k_sleep(K_MSEC(100));
 	// Test data
@@ -407,7 +378,7 @@ void test_pub_sub_no_buffer(void)
 	k_sem_take(&sub5_sem, K_FOREVER);
 }
 
-void test_zerv_get_hello_world(void)
+ZTEST(zerv_test, test_zerv_get_hello_world)
 {
 	ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20, {
 		zassert_equal(rc, 0, NULL);
@@ -429,7 +400,7 @@ void test_zerv_get_hello_world(void)
 	ZERV_CALL(zerv_test_service, fail, rc, p_ret, { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
 }
 
-void test_zervice_poll(void)
+ZTEST(zerv_test, test_zervice_poll)
 {
 	PRINTLN("Sending echo1 request");
 	ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!", {
@@ -473,7 +444,7 @@ void on_future_cb(void)
 	k_sem_give(&future_sem);
 }
 
-void test_zerv_future_service(void)
+ZTEST(zerv_test, test_zerv_future_service)
 {
 	extern zervice_t future_service;
 	struct zerv_req_instance *future_echo_instance =

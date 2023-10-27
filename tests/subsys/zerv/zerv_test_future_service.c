@@ -1,11 +1,3 @@
-// #####################################################################################################################
-// # # #                              Copyright (C) 2023 DevPort Ost AB, all rights reserved. # #
-// Unauthorized copying of this file, via any medium is strictly prohibited.                     #
-// #                                           Proprietary and confidential. # # # # author:  Albin
-// Hjalmas # # company: Systemfabriken # # contact: albin@systemfabriken.tech #
-// #####################################################################################################################
-//  INCLUDES
-//  ###########################################################################################################
 #include "zerv_test_future_service.h"
 
 #include <string.h>
@@ -13,20 +5,12 @@
 
 LOG_MODULE_REGISTER(zerv_test_future_service, LOG_LEVEL_DBG);
 
-// PRIVATE DECLARATIONS
-// ###############################################################################################
 static void zerv_thread(void);
 
-// PRIVATE DEFINITIONS
-// ################################################################################################
+ZERV_DEF(future_service, 256, future_echo, future_other);
 
-ZERV_DEF(future_service, 1024, future_echo, future_other);
-
-K_THREAD_DEFINE(zerv_test_future_service_thread, 1024, (k_thread_entry_t)zerv_thread, NULL, NULL,
+K_THREAD_DEFINE(zerv_test_future_service_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL,
 		NULL, 0, 0, 0);
-
-// PRIVATE FUNCTION DECLARATIONS
-// ######################################################################################
 
 void zerv_thread(void)
 {

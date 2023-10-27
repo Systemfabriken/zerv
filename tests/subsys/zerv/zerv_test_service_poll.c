@@ -1,11 +1,3 @@
-// #####################################################################################################################
-// # # #                              Copyright (C) 2023 DevPort Ost AB, all rights reserved. # #
-// Unauthorized copying of this file, via any medium is strictly prohibited.                     #
-// #                                           Proprietary and confidential. # # # # author:  Albin
-// Hjalmas # # company: Systemfabriken # # contact: albin@systemfabriken.tech #
-// #####################################################################################################################
-//  INCLUDES
-//  ###########################################################################################################
 #include "zerv_test_service_poll.h"
 
 #include <string.h>
@@ -13,21 +5,12 @@
 
 LOG_MODULE_REGISTER(zerv_poll_test, LOG_LEVEL_DBG);
 
-// PRIVATE DECLARATIONS
-// ###############################################################################################
 static void zerv_thread(void);
 
-// PRIVATE DEFINITIONS
-// ################################################################################################
+ZERV_DEF(zerv_poll_service_1, 128, echo1, fail1);
+ZERV_DEF(zerv_poll_service_2, 128, echo2, fail2);
 
-ZERV_DEF(zerv_poll_service_1, 1024, echo1, fail1);
-ZERV_DEF(zerv_poll_service_2, 1024, echo2, fail2);
-
-K_THREAD_DEFINE(zervice_poll_thread, 2048, (k_thread_entry_t)zerv_thread, NULL, NULL, NULL, 0, 0,
-		0);
-
-// PRIVATE FUNCTION DECLARATIONS
-// ######################################################################################
+K_THREAD_DEFINE(zervice_poll_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL, NULL, 0, 0, 0);
 
 void zerv_thread(void)
 {
