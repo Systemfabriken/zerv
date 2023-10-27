@@ -30,11 +30,10 @@ LOG_MODULE_REGISTER(zerv, CONFIG_ZERV_LOG_LEVEL);
  * PRIVATE FUNCTION DECLARATIONS
  ================================================================================================*/
 
-zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv,
-					       struct zerv_req_instance *req_instance,
+zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv, zerv_cmd_inst_t *req_instance,
 					       size_t client_req_params_len,
 					       const void *client_req_params,
-					       struct zerv_resp_base *resp, size_t resp_len)
+					       zerv_cmd_out_base_t *resp, size_t resp_len)
 {
 	if (serv == NULL || req_instance == NULL || client_req_params == NULL || resp == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -55,8 +54,8 @@ zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv,
 
 	// Allocate the request on the service's heap and copy the request data. The request
 	// is then put in the service's fifo.
-	struct zerv_req_params *p_req_params = k_heap_alloc(
-		serv->heap, client_req_params_len + sizeof(struct zerv_req_params), K_NO_WAIT);
+	zerv_cmd_in_t *p_req_params =
+		k_heap_alloc(serv->heap, client_req_params_len + sizeof(zerv_cmd_in_t), K_NO_WAIT);
 	if (p_req_params == NULL) {
 		LOG_DBG("Failed to allocate request params to %s: %s", serv->name,
 			req_instance->name);
@@ -109,7 +108,7 @@ zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv,
  * PUBLIC FUNCTION DEFINITIONS
  ================================================================================================*/
 
-struct zerv_req_params *zerv_get_req(zervice_t *serv, k_timeout_t timeout)
+zerv_cmd_in_t *zerv_get_cmd_input(zervice_t *serv, k_timeout_t timeout)
 {
 	if (serv == NULL) {
 		return NULL;
@@ -118,7 +117,7 @@ struct zerv_req_params *zerv_get_req(zervice_t *serv, k_timeout_t timeout)
 	return k_fifo_get(serv->fifo, timeout);
 }
 
-zerv_rc_t zerv_handle_request(zervice_t *serv, struct zerv_req_params *req_params)
+zerv_rc_t zerv_handle_request(zervice_t *serv, zerv_cmd_in_t *req_params)
 {
 	if (serv == NULL || req_params == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -134,7 +133,7 @@ zerv_rc_t zerv_handle_request(zervice_t *serv, struct zerv_req_params *req_param
 		req_params->client_req_params.data, req_params->resp);
 
 	if (rc == ZERV_RC_FUTURE) {
-		struct zerv_req_instance *req_instance = serv->cmd_instances[req_params->id];
+		zerv_cmd_inst_t *req_instance = serv->cmd_instances[req_params->id];
 		LOG_DBG("Future returned from %s, request: %s", serv->name, req_instance->name);
 		req_instance->future.req_params = req_params;
 		req_instance->future.is_active = true;
@@ -148,8 +147,8 @@ zerv_rc_t zerv_handle_request(zervice_t *serv, struct zerv_req_params *req_param
 	return rc;
 }
 
-zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, struct zerv_req_instance *req_instance,
-					void *resp, k_timeout_t timeout)
+zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, zerv_cmd_inst_t *req_instance, void *resp,
+					k_timeout_t timeout)
 {
 	if (serv == NULL || req_instance == NULL || resp == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -183,8 +182,7 @@ zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, struct zerv_req_instanc
 	return ret;
 }
 
-zerv_rc_t zerv_get_req_instance(zervice_t *serv, int req_id,
-				struct zerv_req_instance **req_instance)
+zerv_rc_t zerv_get_cmd_input_instance(zervice_t *serv, int req_id, zerv_cmd_inst_t **req_instance)
 {
 	if (serv == NULL || req_instance == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -198,8 +196,8 @@ zerv_rc_t zerv_get_req_instance(zervice_t *serv, int req_id,
 	return ZERV_RC_OK;
 }
 
-zerv_rc_t zerv_future_init(zervice_t *serv, struct zerv_req_instance *req_instance,
-			   struct zerv_req_params *req_params)
+zerv_rc_t zerv_future_init(zervice_t *serv, zerv_cmd_inst_t *req_instance,
+			   zerv_cmd_in_t *req_params)
 {
 	if (serv == NULL || req_instance == NULL || req_params == NULL) {
 		LOG_ERR("Invalid arguments");
@@ -218,7 +216,7 @@ zerv_rc_t zerv_future_init(zervice_t *serv, struct zerv_req_instance *req_instan
 	return ZERV_RC_OK;
 }
 
-void _zerv_future_signal_response(struct zerv_req_instance *req_instance, zerv_rc_t rc)
+void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc)
 {
 	if (!req_instance->future.is_active) {
 		return;

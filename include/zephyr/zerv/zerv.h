@@ -19,7 +19,7 @@
 /*=================================================================================================
  * INCLUDES
  *===============================================================================================*/
-#include "zerv_internal.h"
+#include <zephyr/zerv/zerv_internal.h>
 
 /*=================================================================================================
  * PUBLIC MACROS
@@ -39,7 +39,7 @@
 		name##_resp_handler_t on_delayed_response;                                         \
 		ret                                                                                \
 	} name##_ret_t;                                                                            \
-	extern struct zerv_req_instance __##name
+	extern zerv_cmd_inst_t __##name
 
 /**
  * @brief Call a zervice command.
@@ -71,7 +71,7 @@
 				REVERSE_ARGS(GET_ARGS_LESS_N(1, REVERSE_ARGS(__VA_ARGS__)))};      \
 			retcode = zerv_internal_client_request_handler(                            \
 				&zervice, &__##cmd, sizeof(cmd##_param_t), &__##cmd##_request,     \
-				(struct zerv_resp_base *)p_ret, sizeof(cmd##_ret_t));              \
+				(zerv_cmd_out_base_t *)p_ret, sizeof(cmd##_ret_t));                \
 		}                                                                                  \
 		GET_ARG_N(1, REVERSE_ARGS(__VA_ARGS__));                                           \
 	}
@@ -92,7 +92,9 @@
  * echo and fail.
  */
 #define ZERV_DECL(zervice, ...)                                                                    \
-	enum __##zervice##_cmds_e{FOR_EACH(__ZERV_REQ_ID_DECL, (, ), __VA_ARGS__),                 \
+	FOR_EACH(__ZERV_CMD_HANDLER_FN_DECL, (;), __VA_ARGS__)                                     \
+		__ZERV_DEFINE_CMD_INSTANCE_LIST(zervice, __VA_ARGS__)                              \
+	enum __##zervice##_cmds_e{FOR_EACH(__ZERV_CMD_ID_DECL, (, ), __VA_ARGS__),                 \
 				  __##zervice##_cmd_cnt};                                          \
 	extern zervice_t zervice
 
@@ -107,7 +109,7 @@
  * trigger the service to initialize a future and signal the client that the response is delayed.
  *
  * @example
- * ZERV_REQ_HANDLER_DEF(get_hello_world, const get_hello_world_req_t *p_req,
+ * ZERV_CMD_DEF(get_hello_world, const get_hello_world_req_t *p_req,
  * get_hello_world_ret_t *p_resp)
  * {
  *    strcpy(p_resp->str, "Hello World!");
@@ -118,21 +120,21 @@
  *
  * Here the request handler for the request get_hello_world is defined.
  */
-#define ZERV_REQ_HANDLER_DEF(cmd_name, p_req, p_resp)                                              \
+#define ZERV_CMD_DEF(cmd_name, p_req, p_resp)                                                      \
 	static K_SEM_DEFINE(__##cmd_name##_future_sem, 0, 1);                                      \
 	static cmd_name##_ret_t __##cmd_name##_future_response;                                    \
-	struct zerv_req_instance __##cmd_name __aligned(4) = {                                     \
+	zerv_cmd_inst_t __##cmd_name __aligned(4) = {                                              \
 		.name = #cmd_name,                                                                 \
 		.id = __##cmd_name##_id,                                                           \
 		.is_locked = ATOMIC_INIT(false),                                                   \
-		.handler = (zerv_abstract_req_handler_t)__##cmd_name##_handler,                    \
+		.handler = (zerv_cmd_abstract_handler_t)__##cmd_name##_handler,                    \
 		.future =                                                                          \
 			{                                                                          \
 				.is_active = false,                                                \
 				.sem = &__##cmd_name##_future_sem,                                 \
 				.req_params = NULL,                                                \
 				.resp_len = sizeof(cmd_name##_ret_t),                              \
-				.resp = (struct zerv_resp_base *)&__##cmd_name##_future_response,  \
+				.resp = (zerv_cmd_out_base_t *)&__##cmd_name##_future_response,    \
 			},                                                                         \
 	};                                                                                         \
 	zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *p_req, cmd_name##_ret_t *p_resp)
@@ -146,17 +148,15 @@
  * @note The requests must be defined before the service.
  *
  * @example
- * ZERV_DEF(zerv_test_service, 1024, get_hello_world, echo, fail);
+ * ZERV_DEF_NO_THREAD(zerv_test_service, 1024, get_hello_world, echo, fail);
  *
  * Here the service is defined with the name zerv_test_service, a queue size of 1024 bytes and the
  * requests get_hello_world, echo and fail.
  */
-#define ZERV_DEF(zervice, queue_mem_size, ...)                                                     \
-	FOR_EACH(__ZERV_HANDLER_FN_DECL, (;), __VA_ARGS__)                                         \
-		static K_HEAP_DEFINE(__##zervice##_heap, queue_mem_size);                          \
+#define ZERV_DEF_NO_THREAD(zervice, queue_mem_size)                                                \
+	static K_HEAP_DEFINE(__##zervice##_heap, queue_mem_size);                                  \
 	static K_FIFO_DEFINE(__##zervice##_fifo);                                                  \
 	static K_MUTEX_DEFINE(__##zervice##_mtx);                                                  \
-	__ZERV_DEFINE_REQUEST_INSTANCE_LIST(zervice, __VA_ARGS__)                                  \
 	zervice_t zervice __aligned(4) = {                                                         \
 		.name = #zervice,                                                                  \
 		.heap = &__##zervice##_heap,                                                       \
@@ -188,7 +188,7 @@
  * @return Pointer to the request parameters if a request was received, NULL if the timeout was
  * reached.
  */
-struct zerv_req_params *zerv_get_req(zervice_t *serv, k_timeout_t timeout);
+zerv_cmd_in_t *zerv_get_cmd_input(zervice_t *serv, k_timeout_t timeout);
 
 /**
  * @brief Used from the service thread to handle a request.
@@ -198,7 +198,7 @@ struct zerv_req_params *zerv_get_req(zervice_t *serv, k_timeout_t timeout);
  *
  * @return ZERV_RC return code from the request handler function.
  */
-zerv_rc_t zerv_handle_request(zervice_t *serv, struct zerv_req_params *req);
+zerv_rc_t zerv_handle_request(zervice_t *serv, zerv_cmd_in_t *req);
 
 /**
  * @brief Get the id of a request.
@@ -207,7 +207,7 @@ zerv_rc_t zerv_handle_request(zervice_t *serv, struct zerv_req_params *req);
  *
  * @return The id of the request.
  */
-#define zerv_get_req_id(cmd_name) __ZERV_REQ_ID_DECL(cmd_name)
+#define zerv_get_cmd_input_id(cmd_name) __ZERV_CMD_ID_DECL(cmd_name)
 
 /**
  * @brief Used from the service thread to get a request instance that the request parameters are
@@ -219,8 +219,7 @@ zerv_rc_t zerv_handle_request(zervice_t *serv, struct zerv_req_params *req);
  *
  * @return  ZERV_RC return code.
  */
-zerv_rc_t zerv_get_req_instance(zervice_t *serv, int req_id,
-				struct zerv_req_instance **req_instance);
+zerv_rc_t zerv_get_cmd_input_instance(zervice_t *serv, int req_id, zerv_cmd_inst_t **req_instance);
 
 /**
  * @brief Used from the service thread to initialize a future.
@@ -231,8 +230,8 @@ zerv_rc_t zerv_get_req_instance(zervice_t *serv, int req_id,
  *
  * @return N/A
  */
-zerv_rc_t zerv_future_init(zervice_t *serv, struct zerv_req_instance *req_instance,
-			   struct zerv_req_params *req_params);
+zerv_rc_t zerv_future_init(zervice_t *serv, zerv_cmd_inst_t *req_instance,
+			   zerv_cmd_in_t *req_params);
 
 /**
  * @brief Check if a future request has a delayed response.
@@ -299,9 +298,9 @@ zerv_rc_t zerv_future_init(zervice_t *serv, struct zerv_req_instance *req_instan
  * return the result of the request handler function.
  */
 #define zerv_call(zervice, cmd_name, p_req_params, p_response_dst)                                 \
-	zerv_internal_client_request_handler(                                                      \
-		&zervice, &__##cmd_name, sizeof(cmd_name##_param_t), p_req_params,                 \
-		(struct zerv_resp_base *)p_response_dst, sizeof(cmd_name##_ret_t));
+	zerv_internal_client_request_handler(&zervice, &__##cmd_name, sizeof(cmd_name##_param_t),  \
+					     p_req_params, (zerv_cmd_out_base_t *)p_response_dst,  \
+					     sizeof(cmd_name##_ret_t));
 
 /**
  * @brief Get the future response of a request.

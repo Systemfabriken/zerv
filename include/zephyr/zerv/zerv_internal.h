@@ -62,50 +62,50 @@ static inline const char *zerv_rc_to_str(zerv_rc_t rc)
 	}
 }
 
-typedef zerv_rc_t (*zerv_abstract_req_handler_t)(const void *req, void *resp);
+typedef zerv_rc_t (*zerv_cmd_abstract_handler_t)(const void *req, void *resp);
 typedef void (*zerv_abstract_resp_handler_t)(void);
 
-struct zerv_resp_base {
+typedef struct {
 	zerv_rc_t rc;
 	zerv_abstract_resp_handler_t handler;
-} __aligned(4);
+} zerv_cmd_out_base_t;
 
 /**
  * @brief Used internally to store the parameters to a service request on the service's heap.
  */
-struct zerv_allocated_req_params {
+typedef struct {
 	size_t data_len;
 	uint8_t data[];
-};
+} zerv_cmd_in_bytes_t;
 
-struct zerv_req_params {
+typedef struct {
 	uint32_t unused; // Managed by the k_fifo.
 	int id;
 	struct k_sem *response_sem;
 	size_t resp_len;
-	struct zerv_resp_base *resp;
-	struct zerv_allocated_req_params client_req_params;
-} __aligned(4);
+	zerv_cmd_out_base_t *resp;
+	zerv_cmd_in_bytes_t client_req_params;
+} zerv_cmd_in_t;
 
-struct zerv_future_response {
+typedef struct {
 	bool is_active;
 	struct k_sem *sem;
-	struct zerv_req_params *req_params;
+	zerv_cmd_in_t *req_params;
 	size_t resp_len;
-	struct zerv_resp_base *resp;
-} __aligned(4);
+	zerv_cmd_out_base_t *resp;
+} zerv_cmd_out_future_t;
 
 /**
- * @brief The type of a service request.
- * @note This is used internally to represent a service request - not request parameters.
+ * @brief The type of a zervice command.
+ * @note This is used internally to represent a zervice command.
  */
-struct zerv_req_instance {
+typedef struct {
 	const char *name;
 	int id;
 	atomic_t is_locked;
-	zerv_abstract_req_handler_t handler;
-	struct zerv_future_response future;
-};
+	zerv_cmd_abstract_handler_t handler;
+	zerv_cmd_out_future_t future;
+} zerv_cmd_inst_t;
 
 typedef struct {
 	const char *name;
@@ -113,7 +113,7 @@ typedef struct {
 	struct k_fifo *fifo;
 	struct k_mutex *mtx;
 	size_t cmd_instance_cnt;
-	struct zerv_req_instance **cmd_instances;
+	zerv_cmd_inst_t **cmd_instances;
 } zervice_t;
 
 /**
@@ -129,16 +129,15 @@ typedef struct {
  * @return ZERV_RC return code from the service request handler function except for ZERV_RC_FUTURE
  * that is returned if the request is delayed.
  */
-zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv,
-					       struct zerv_req_instance *req_instance,
+zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv, zerv_cmd_inst_t *req_instance,
 					       size_t client_req_params_len,
 					       const void *client_req_params,
-					       struct zerv_resp_base *resp, size_t resp_len);
+					       zerv_cmd_out_base_t *resp, size_t resp_len);
 
-zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, struct zerv_req_instance *req_instance,
-					void *resp, k_timeout_t timeout);
+zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, zerv_cmd_inst_t *req_instance, void *resp,
+					k_timeout_t timeout);
 
-void _zerv_future_signal_response(struct zerv_req_instance *req_instance, zerv_rc_t rc);
+void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc);
 
 /*=================================================================================================
  * PUBLIC MACROS
@@ -146,30 +145,28 @@ void _zerv_future_signal_response(struct zerv_req_instance *req_instance, zerv_r
 
 #define __ZERV_IMPL_STRUCT_MEMBER(field) field;
 
-#define __ZERV_HANDLER_FN_DECL(cmd_name)                                                           \
-	__unused static zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *req,            \
+#define __ZERV_CMD_HANDLER_FN_DECL(cmd_name)                                                       \
+	__unused extern zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *req,            \
 							 cmd_name##_ret_t *resp);
 
-#define __ZERV_HANDLER_FN_IDENTIFIER(cmd_name) (zerv_abstract_req_handler_t) __##cmd_name##_handler
+#define __ZERV_HANDLER_FN_IDENTIFIER(cmd_name) (zerv_cmd_abstract_handler_t) __##cmd_name##_handler
 
-#define __ZERV_REQ_ID_DECL(cmd_name) __##cmd_name##_id
+#define __ZERV_CMD_ID_DECL(cmd_name) __##cmd_name##_id
 
-#define __ZERV_REQ_INSTANCE_POINTER(cmd_name) &__##cmd_name
+#define __ZERV_CMD_INSTANCE_POINTER(cmd_name) &__##cmd_name
 
-#define __ZERV_DEFINE_REQUEST_INSTANCE_LIST(zervice, ...)                                          \
-	static struct zerv_req_instance *zervice##_cmd_instances[] = {                             \
-		FOR_EACH(__ZERV_REQ_INSTANCE_POINTER, (, ), __VA_ARGS__)};
+#define __ZERV_DEFINE_CMD_INSTANCE_LIST(zervice, ...)                                              \
+	__unused static zerv_cmd_inst_t *zervice##_cmd_instances[] = {                             \
+		FOR_EACH(__ZERV_CMD_INSTANCE_POINTER, (, ), __VA_ARGS__)};
 
-#define __ZERV_REQ_GET_PARAMS(cmd_name, zervice)                                                   \
+#define __ZERV_GET_CMD_INPUT(cmd_name, zervice)                                                    \
 	static inline cmd_name##_param_t *zerv_get_##cmd_name##_params(void)                       \
 	{                                                                                          \
 		return (cmd_name##_param_t *)zerv_get_last_##zervice##_req()                       \
 			->client_req_params.data;                                                  \
 	}
 
-#define __ZERV_REQ_GET_PARAMS_DEF(zervice, ...)                                                    \
-	FOR_EACH_FIXED_ARG(__ZERV_REQ_GET_PARAMS, (), zervice, __VA_ARGS__)
-
-#define __ZERV_REQ_FUTURE_HANDLER_DEF(cmd_name)
+#define __ZERV_GET_CMD_INPUT_DEF(zervice, ...)                                                     \
+	FOR_EACH_FIXED_ARG(__ZERV_GET_CMD_INPUT, (), zervice, __VA_ARGS__)
 
 #endif // _ZERV_INTERNAL_H_

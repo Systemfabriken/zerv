@@ -7,8 +7,8 @@ LOG_MODULE_REGISTER(zerv_poll_test, LOG_LEVEL_DBG);
 
 static void zerv_thread(void);
 
-ZERV_DEF(zerv_poll_service_1, 128, echo1, fail1);
-ZERV_DEF(zerv_poll_service_2, 128, echo2, fail2);
+ZERV_DEF_NO_THREAD(zerv_poll_service_1, 128);
+ZERV_DEF_NO_THREAD(zerv_poll_service_2, 128);
 
 K_THREAD_DEFINE(zervice_poll_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL, NULL, 0, 0, 0);
 
@@ -31,18 +31,18 @@ void zerv_thread(void)
 		k_poll(events, 2, K_FOREVER);
 		LOG_DBG("Received request");
 
-		struct zerv_req_params *serv1_req = NULL;
-		struct zerv_req_params *serv2_req = NULL;
+		zerv_cmd_in_t *serv1_req = NULL;
+		zerv_cmd_in_t *serv2_req = NULL;
 
 		if (events[ZIT_POLL_SERVICE_1].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
 			LOG_DBG("Received event on service 1");
-			serv1_req = zerv_get_req(&zerv_poll_service_1, K_NO_WAIT);
+			serv1_req = zerv_get_cmd_input(&zerv_poll_service_1, K_NO_WAIT);
 			LOG_DBG("Received request on service 1: %p", serv1_req);
 		}
 
 		if (events[ZIT_POLL_SERVICE_2].state == K_POLL_STATE_FIFO_DATA_AVAILABLE) {
 			LOG_DBG("Received event on service 2");
-			serv2_req = zerv_get_req(&zerv_poll_service_2, K_NO_WAIT);
+			serv2_req = zerv_get_cmd_input(&zerv_poll_service_2, K_NO_WAIT);
 			LOG_DBG("Received request on service 2: %p", serv2_req);
 		}
 
@@ -67,27 +67,27 @@ void zerv_thread(void)
 	}
 }
 
-ZERV_REQ_HANDLER_DEF(echo1, req, resp)
+ZERV_CMD_DEF(echo1, req, resp)
 {
 	LOG_DBG("Received request: str: %s", req->str);
 	strcpy(resp->str, req->str);
 	return ZERV_RC_OK;
 }
 
-ZERV_REQ_HANDLER_DEF(fail1, req, resp)
+ZERV_CMD_DEF(fail1, req, resp)
 {
 	LOG_DBG("Received request: dummy: %d", req->dummy);
 	return ZERV_RC_ERROR;
 }
 
-ZERV_REQ_HANDLER_DEF(echo2, req, resp)
+ZERV_CMD_DEF(echo2, req, resp)
 {
 	LOG_DBG("Received request: str: %s", req->str);
 	strcpy(resp->str, req->str);
 	return ZERV_RC_OK;
 }
 
-ZERV_REQ_HANDLER_DEF(fail2, req, resp)
+ZERV_CMD_DEF(fail2, req, resp)
 {
 	LOG_DBG("Received request: dummy: %d", req->dummy);
 	return ZERV_RC_ERROR;

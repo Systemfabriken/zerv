@@ -7,7 +7,7 @@ LOG_MODULE_REGISTER(zerv_test_future_service, LOG_LEVEL_DBG);
 
 static void zerv_thread(void);
 
-ZERV_DEF(future_service, 256, future_echo, future_other);
+ZERV_DEF_NO_THREAD(future_service, 256);
 
 K_THREAD_DEFINE(zerv_test_future_service_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL,
 		NULL, 0, 0, 0);
@@ -15,7 +15,7 @@ K_THREAD_DEFINE(zerv_test_future_service_thread, 256, (k_thread_entry_t)zerv_thr
 void zerv_thread(void)
 {
 	while (true) {
-		struct zerv_req_params *p_params = zerv_get_req(&future_service, K_FOREVER);
+		zerv_cmd_in_t *p_params = zerv_get_cmd_input(&future_service, K_FOREVER);
 		LOG_DBG("Received request");
 
 		zerv_rc_t rc = zerv_handle_request(&future_service, p_params);
@@ -26,9 +26,9 @@ void zerv_thread(void)
 
 		if (rc == ZERV_RC_FUTURE) {
 			// Initialize the future
-			struct zerv_req_instance *req_instance;
-			rc = zerv_get_req_instance(&future_service, zerv_get_req_id(future_echo),
-						   &req_instance);
+			zerv_cmd_inst_t *req_instance;
+			rc = zerv_get_cmd_input_instance(
+				&future_service, zerv_get_cmd_input_id(future_echo), &req_instance);
 			if (rc < ZERV_RC_OK) {
 				LOG_ERR("Failed to get request instance");
 				continue;
@@ -58,7 +58,7 @@ void zerv_thread(void)
 	}
 }
 
-ZERV_REQ_HANDLER_DEF(future_echo, req, resp)
+ZERV_CMD_DEF(future_echo, req, resp)
 {
 	if (req->is_delayed) {
 		return ZERV_RC_FUTURE;
@@ -68,7 +68,7 @@ ZERV_REQ_HANDLER_DEF(future_echo, req, resp)
 	}
 }
 
-ZERV_REQ_HANDLER_DEF(future_other, req, resp)
+ZERV_CMD_DEF(future_other, req, resp)
 {
 	LOG_DBG("Received request: %s", req->str);
 	strcpy(resp->str, req->str);

@@ -22,7 +22,7 @@ participant "**scheduler**" as sched
 
     ' Initialisation
     activate zerv_thread
-    zerv_thread -> zerv_queue ++: **zerv_get_req(...)**
+    zerv_thread -> zerv_queue ++: **zerv_get_cmd_input(...)**
     zerv_queue --> sched --++: **k_fifo_get(...)** (blocking service thread)
     deactivate zerv_thread
 

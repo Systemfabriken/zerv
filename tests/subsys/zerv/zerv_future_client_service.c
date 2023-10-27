@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(future_client_service, LOG_LEVEL_DBG);
 
 static void zerv_thread(void);
 
-ZERV_DEF(future_client, 128, call_future_echo, call_other);
+ZERV_DEF_NO_THREAD(future_client, 128);
 
 K_THREAD_DEFINE(future_client_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL, NULL, 0, 0,
 		0);
@@ -17,7 +17,7 @@ K_THREAD_DEFINE(future_client_thread, 256, (k_thread_entry_t)zerv_thread, NULL, 
 void zerv_thread(void)
 {
 	while (true) {
-		struct zerv_req_params *params = zerv_get_req(&future_client, K_FOREVER);
+		zerv_cmd_in_t *params = zerv_get_cmd_input(&future_client, K_FOREVER);
 		if (!params) {
 			LOG_ERR("Failed to receive request");
 			continue;
@@ -32,7 +32,7 @@ void zerv_thread(void)
 	}
 }
 
-ZERV_REQ_HANDLER_DEF(call_future_echo, req, resp)
+ZERV_CMD_DEF(call_future_echo, req, resp)
 {
 	future_echo_ret_t response = {0};
 	zerv_rc_t rc = zerv_call(future_service, future_echo,
@@ -49,7 +49,7 @@ ZERV_REQ_HANDLER_DEF(call_future_echo, req, resp)
 	}
 }
 
-ZERV_REQ_HANDLER_DEF(call_other, req, resp)
+ZERV_CMD_DEF(call_other, req, resp)
 {
 	future_other_ret_t response = {0};
 	zerv_rc_t rc = zerv_call(future_service, future_other,
