@@ -20,8 +20,8 @@ void zerv_thread(void)
 	};
 
 	struct k_poll_event events[] __aligned(4) = {
-		[ZIT_POLL_SERVICE_1] = ZERV_POLL_EVENT_INITIALIZER(zerv_poll_service_1),
-		[ZIT_POLL_SERVICE_2] = ZERV_POLL_EVENT_INITIALIZER(zerv_poll_service_2),
+		[ZIT_POLL_SERVICE_1] = ZERV_K_POLL_EVENT_INITIALIZER(zerv_poll_service_1),
+		[ZIT_POLL_SERVICE_2] = ZERV_K_POLL_EVENT_INITIALIZER(zerv_poll_service_2),
 	};
 
 	int rc;

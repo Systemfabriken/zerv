@@ -231,3 +231,26 @@ void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc)
 		req_instance->future.resp->handler = NULL;
 	}
 }
+
+void _zerv_cmd_processor_thread(zervice_t *p_zervice, void (*init_callback)(void),
+				void (*post_event_handler_callback)(void))
+{
+
+	if (init_callback) {
+		init_callback();
+	}
+
+	while (true) {
+		zerv_cmd_in_t *p_input = zerv_get_cmd_input(p_zervice, K_FOREVER);
+		LOG_DBG("Received service request on %s", p_zervice->name);
+
+		zerv_rc_t rc = zerv_handle_request(p_zervice, p_input);
+		if (rc < ZERV_RC_OK) {
+			LOG_ERR("Failed to handle request on %s", p_zervice->name);
+		}
+
+		if (post_event_handler_callback) {
+			post_event_handler_callback();
+		}
+	}
+}

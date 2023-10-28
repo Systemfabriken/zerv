@@ -29,17 +29,31 @@
 
 #define ZERV_OUT(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
-#define ZERV_CMD_DECL(name, param, ret)                                                            \
+#define ZERV_CMD_DECL(name, in, out)                                                               \
 	typedef struct name##_param {                                                              \
-		param                                                                              \
+		in                                                                                 \
 	} name##_param_t;                                                                          \
 	typedef void (*name##_resp_handler_t)(void);                                               \
 	typedef struct name##_ret {                                                                \
 		zerv_rc_t rc;                                                                      \
 		name##_resp_handler_t on_delayed_response;                                         \
-		ret                                                                                \
+		out                                                                                \
 	} name##_ret_t;                                                                            \
 	extern zerv_cmd_inst_t __##name
+
+/**
+ * @brief Macro for declaring a k_poll_event that is to be handled by a zervice.
+ *
+ * @param name The name of the event.
+ * @param _event_type The type of the event. Should be K_POLL_TYPE_*.
+ * @param _event_mode The mode of the event. Should be K_POLL_MODE_*.
+ * @param _event_obj The object of the event. Should be a pointer to a supported k_poll_event
+ * object.
+ */
+#define ZERV_K_POLL_EVENT_DECL(name, _event_type, _event_mode, _event_obj)                         \
+	static k_poll_event_t __##name##_event =                                                   \
+		K_POLL_EVENT_INITIALIZER(_event_type, _event_mode, _event_obj);                    \
+	static void __##name##_event_handler(void *obj)
 
 /**
  * @brief Call a zervice command.
@@ -166,12 +180,18 @@
 		.cmd_instances = zervice##_cmd_instances,                                          \
 	};
 
+#define ZERV_DEF_EVENT_PROCESSOR(zervice, heap_size, stack_size, prio, init_callback,              \
+				 post_event_handler_callback)                                      \
+	ZERV_DEF_NO_THREAD(zervice, heap_size);                                                    \
+	static K_THREAD_DEFINE(__##zervice##_thread, stack_size,                                   \
+			       (k_thread_entry_t)_zerv_cmd_processor_thread, &zervice,             \
+			       init_callback, post_event_handler_callback, prio, 0, 0);
+
 /**
- * @brief Macro for defining a subscriber event.
- * @param event_name The name of the event.
- * @param sub_name The name of the subscriber.
+ * @brief Macro for initializing a k_poll_event struct for a zervice.
+ * @param zervice The name of the zervice.
  */
-#define ZERV_POLL_EVENT_INITIALIZER(zervice)                                                       \
+#define ZERV_K_POLL_EVENT_INITIALIZER(zervice)                                                     \
 	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,  \
 					zervice.fifo, 0)
 

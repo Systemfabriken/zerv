@@ -139,6 +139,9 @@ zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, zerv_cmd_inst_t *req_in
 
 void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc);
 
+void _zerv_cmd_processor_thread(zervice_t *p_zervice, void (*init_callback)(void),
+				void (*post_event_handler_callback)(void));
+
 /*=================================================================================================
  * PUBLIC MACROS
  *===============================================================================================*/

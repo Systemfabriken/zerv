@@ -5,30 +5,7 @@
 
 LOG_MODULE_REGISTER(zerv_test_service, LOG_LEVEL_DBG);
 
-static void zerv_thread(void);
-
-ZERV_DEF_NO_THREAD(zerv_test_service, 128);
-
-K_THREAD_DEFINE(zerv_test_service_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL, NULL, 0,
-		0, 0);
-
-void zerv_thread(void)
-{
-	while (true) {
-		zerv_cmd_in_t *params = zerv_get_cmd_input(&zerv_test_service, K_FOREVER);
-		if (!params) {
-			LOG_ERR("Failed to receive request");
-			continue;
-		}
-		LOG_DBG("Received request");
-
-		zerv_rc_t rc = zerv_handle_request(&zerv_test_service, params);
-		if (rc != 0) {
-			LOG_ERR("Failed to handle request");
-			continue;
-		}
-	}
-}
+ZERV_DEF_EVENT_PROCESSOR(zerv_test_service, 128, 256, K_PRIO_PREEMPT(10), NULL, NULL);
 
 ZERV_CMD_DEF(get_hello_world, req, resp)
 {
