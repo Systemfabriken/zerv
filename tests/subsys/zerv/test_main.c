@@ -433,6 +433,10 @@ ZTEST(zerv_test, test_zervice_poll)
 	PRINTLN("Sending fail2 request");
 	ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret,
 		  { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
+
+	k_sem_give(&event_sem);
+	int rc = k_sem_take(&event_sem_response, K_SECONDS(1));
+	zassert_equal(rc, 0, NULL);
 }
 
 // K_SEM_DEFINE(future_sem, 0, 1);

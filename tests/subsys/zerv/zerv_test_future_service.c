@@ -7,7 +7,7 @@ LOG_MODULE_REGISTER(zerv_test_future_service, LOG_LEVEL_DBG);
 
 static void zerv_thread(void);
 
-ZERV_DEF_NO_THREAD(future_service, 256);
+ZERV_DEF(future_service, 256);
 
 K_THREAD_DEFINE(zerv_test_future_service_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL,
 		NULL, 0, 0, 0);

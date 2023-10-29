@@ -5,11 +5,16 @@
 
 LOG_MODULE_REGISTER(zerv_poll_test, LOG_LEVEL_DBG);
 
-ZERV_DEF_NO_THREAD(zerv_poll_service_1, 128);
-ZERV_EVENT_HANDLER_DECL(zerv_poll_service_1_event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-			K_POLL_MODE_NOTIFY_ONLY, zerv_poll_service_1.fifo);
+ZERV_DEF(zerv_poll_service_1, 128);
+ZERV_EVENT_DEF(zerv_poll_service_1_event, K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
+	       &__zerv_poll_service_1_fifo);
 
-ZERV_DEF_EVENT_PROCESSOR_THREAD(zerv_poll_service_2, 128, 256, 0, zerv_poll_service_1_event);
+K_SEM_DEFINE(event_sem, 0, 1);
+K_SEM_DEFINE(event_sem_response, 0, 1);
+ZERV_EVENT_DEF(event_sem_handler, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, &event_sem);
+
+ZERV_EVENT_PROCESSOR_THREAD_DEF(zerv_poll_service_2, 128, 256, 0, zerv_poll_service_1_event,
+				event_sem_handler);
 
 ZERV_EVENT_HANDLER_DEF(zerv_poll_service_1_event)
 {
@@ -24,6 +29,14 @@ ZERV_EVENT_HANDLER_DEF(zerv_poll_service_1_event)
 		LOG_ERR("Failed to handle request");
 		return;
 	}
+}
+
+ZERV_EVENT_HANDLER_DEF(event_sem_handler)
+{
+	LOG_DBG("Received event!");
+	k_sem_init(&event_sem, 0, 1);
+	k_sem_give(&event_sem_response);
+	return;
 }
 
 ZERV_CMD_HANDLER_DEF(echo1, req, resp)

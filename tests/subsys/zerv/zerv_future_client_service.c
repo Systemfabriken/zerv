@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(future_client_service, LOG_LEVEL_DBG);
 
 static void zerv_thread(void);
 
-ZERV_DEF_NO_THREAD(future_client, 128);
+ZERV_DEF(future_client, 128);
 
 K_THREAD_DEFINE(future_client_thread, 256, (k_thread_entry_t)zerv_thread, NULL, NULL, NULL, 0, 0,
 		0);

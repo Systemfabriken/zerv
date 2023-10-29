@@ -122,10 +122,11 @@ typedef struct {
 typedef struct {
 	const struct k_poll_event *event;
 	void (*handler)(void *obj);
+	uint32_t type;
 } zerv_event_t;
 
 typedef struct {
-	zerv_event_t *events;
+	zerv_event_t **events;
 	size_t event_cnt;
 } zerv_events_t;
 
@@ -186,9 +187,6 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 #define __ZERV_GET_CMD_INPUT_DEF(zervice, ...)                                                     \
 	FOR_EACH_FIXED_ARG(__ZERV_GET_CMD_INPUT, (), zervice, __VA_ARGS__)
 
-#define __zerv_event_t_INIT(name)                                                                  \
-	{                                                                                          \
-		.event = &__##name##_event, .handler = __##name##_event_handler                    \
-	}
+#define __zerv_event_t_INIT(name) &__zerv_event_##name
 
 #endif // _ZERV_INTERNAL_H_

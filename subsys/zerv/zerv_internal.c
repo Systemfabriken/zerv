@@ -265,7 +265,7 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 
 	struct k_poll_event events[zervice_events->event_cnt];
 	for (size_t i = 0; i < zervice_events->event_cnt; i++) {
-		memcpy(&events[i], zervice_events->events[i].event, sizeof(struct k_poll_event));
+		memcpy(&events[i], zervice_events->events[i]->event, sizeof(struct k_poll_event));
 	}
 
 	LOG_DBG("Starting event processor for %s, num events %d", p_zervice->name,
@@ -285,6 +285,7 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 		// Handle the Zervice commands first
 		if (events[0].state == K_POLL_TYPE_FIFO_DATA_AVAILABLE) {
 			events[0].state = K_POLL_STATE_NOT_READY;
+			LOG_DBG("Received request on %s", p_zervice->name);
 			zerv_cmd_in_t *p_req_params = k_fifo_get(p_zervice->fifo, K_NO_WAIT);
 			if (p_req_params == NULL) {
 				LOG_ERR("Failed to get request params from %s", p_zervice->name);
@@ -300,10 +301,11 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 
 		// Handle the Zervice events
 		for (size_t i = 1; i < zervice_events->event_cnt; i++) {
-			if (events[i].state == zervice_events->events[i].event->type) {
-				events[i].state = K_POLL_STATE_NOT_READY;
-				zervice_events->events[i].handler(events[i].obj);
+			if (events[i].state == events[i].type) {
+				LOG_DBG("Received event on %s", p_zervice->name);
+				zervice_events->events[i]->handler(events[i].obj);
 			}
+			events[i].state = K_POLL_STATE_NOT_READY;
 		}
 	}
 }
