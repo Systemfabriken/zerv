@@ -5,9 +5,9 @@
 
 LOG_MODULE_REGISTER(zerv_test_service, LOG_LEVEL_DBG);
 
-ZERV_DEF_EVENT_PROCESSOR(zerv_test_service, 128, 256, K_PRIO_PREEMPT(10), NULL, NULL);
+ZERV_DEF_CMD_PROCESSOR_THREAD(zerv_test_service, 128, 256, K_PRIO_PREEMPT(10));
 
-ZERV_CMD_DEF(get_hello_world, req, resp)
+ZERV_CMD_HANDLER_DEF(get_hello_world, req, resp)
 {
 	LOG_DBG("Received request: a: %d, b: %d", req->a, req->b);
 	resp->a = req->a;
@@ -16,14 +16,14 @@ ZERV_CMD_DEF(get_hello_world, req, resp)
 	return ZERV_RC_OK;
 }
 
-ZERV_CMD_DEF(echo, req, resp)
+ZERV_CMD_HANDLER_DEF(echo, req, resp)
 {
 	LOG_DBG("Received request: str: %s", req->str);
 	strcpy(resp->str, req->str);
 	return ZERV_RC_OK;
 }
 
-ZERV_CMD_DEF(fail, req, resp)
+ZERV_CMD_HANDLER_DEF(fail, req, resp)
 {
 	LOG_DBG("Received request: dummy: %d", req->dummy);
 	return ZERV_RC_ERROR;

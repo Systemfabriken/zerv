@@ -58,7 +58,7 @@ void zerv_thread(void)
 	}
 }
 
-ZERV_CMD_DEF(future_echo, req, resp)
+ZERV_CMD_HANDLER_DEF(future_echo, req, resp)
 {
 	if (req->is_delayed) {
 		return ZERV_RC_FUTURE;
@@ -68,7 +68,7 @@ ZERV_CMD_DEF(future_echo, req, resp)
 	}
 }
 
-ZERV_CMD_DEF(future_other, req, resp)
+ZERV_CMD_HANDLER_DEF(future_other, req, resp)
 {
 	LOG_DBG("Received request: %s", req->str);
 	strcpy(resp->str, req->str);

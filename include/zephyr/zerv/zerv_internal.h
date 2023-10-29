@@ -117,6 +117,19 @@ typedef struct {
 } zervice_t;
 
 /**
+ * @brief Used internally to store an event that is to be handled by the zervice.
+ */
+typedef struct {
+	const struct k_poll_event *event;
+	void (*handler)(void *obj);
+} zerv_event_t;
+
+typedef struct {
+	zerv_event_t *events;
+	size_t event_cnt;
+} zerv_events_t;
+
+/**
  * @brief DONT TOUCH, USED INTERNALLY to call a service request from the client thread.
  *
  * @param[in] serv The service to call.
@@ -129,18 +142,19 @@ typedef struct {
  * @return ZERV_RC return code from the service request handler function except for ZERV_RC_FUTURE
  * that is returned if the request is delayed.
  */
-zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv, zerv_cmd_inst_t *req_instance,
+zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
 					       size_t client_req_params_len,
 					       const void *client_req_params,
 					       zerv_cmd_out_base_t *resp, size_t resp_len);
 
-zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, zerv_cmd_inst_t *req_instance, void *resp,
-					k_timeout_t timeout);
+zerv_rc_t zerv_internal_get_future_resp(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
+					void *resp, k_timeout_t timeout);
 
 void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc);
 
-void _zerv_cmd_processor_thread(zervice_t *p_zervice, void (*init_callback)(void),
-				void (*post_event_handler_callback)(void));
+void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice);
+
+void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events);
 
 /*=================================================================================================
  * PUBLIC MACROS
@@ -171,5 +185,10 @@ void _zerv_cmd_processor_thread(zervice_t *p_zervice, void (*init_callback)(void
 
 #define __ZERV_GET_CMD_INPUT_DEF(zervice, ...)                                                     \
 	FOR_EACH_FIXED_ARG(__ZERV_GET_CMD_INPUT, (), zervice, __VA_ARGS__)
+
+#define __zerv_event_t_INIT(name)                                                                  \
+	{                                                                                          \
+		.event = &__##name##_event, .handler = __##name##_event_handler                    \
+	}
 
 #endif // _ZERV_INTERNAL_H_

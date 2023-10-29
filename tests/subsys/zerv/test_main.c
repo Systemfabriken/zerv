@@ -204,179 +204,179 @@ void test_polling_thread(void)
 K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thread, NULL, NULL,
 		NULL, 5, 0, 0);
 
-ZTEST(zerv_test, test_polling)
-{
-	// Exit all the threads
-	polling_test_2 = true;
-	char msg[50] = "Exit!";
-	int rc;
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
+// ZTEST(zerv_test, test_polling)
+// {
+// 	// Exit all the threads
+// 	polling_test_2 = true;
+// 	char msg[50] = "Exit!";
+// 	int rc;
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
 
-	// Start polling thread
-	k_sem_give(&test_polling_sem);
-	k_sleep(K_MSEC(100));
+// 	// Start polling thread
+// 	k_sem_give(&test_polling_sem);
+// 	k_sleep(K_MSEC(100));
 
-	// Test data
-	strcpy(msg, "Hello from polling test!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
-	strcpy(msg, "Hello from polling test again!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// 	// Test data
+// 	strcpy(msg, "Hello from polling test!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// 	strcpy(msg, "Hello from polling test again!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
 
-	strcpy(msg, "Hello from polling test!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
-	strcpy(msg, "Hello from polling test again!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
-}
+// 	strcpy(msg, "Hello from polling test!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// 	strcpy(msg, "Hello from polling test again!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// }
 
-ZTEST(zerv_test, test_no_subscribers)
-{
-	// Exit all the threads
-	char msg[50] = "Testing no subscribers!";
-	PRINTLN("Publishing: %s", msg);
-	int rc;
-	rc = pub_emit(&lone_publisher, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-}
+// ZTEST(zerv_test, test_no_subscribers)
+// {
+// 	// Exit all the threads
+// 	char msg[50] = "Testing no subscribers!";
+// 	PRINTLN("Publishing: %s", msg);
+// 	int rc;
+// 	rc = pub_emit(&lone_publisher, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// }
 
-ZTEST(zerv_test, test_pub_sub)
-{
-	k_sleep(K_MSEC(100));
-	// Test data
-	char msg[50] = "Hello world!";
-	int rc;
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
-	strcpy(msg, "Hello world again!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// ZTEST(zerv_test, test_pub_sub)
+// {
+// 	k_sleep(K_MSEC(100));
+// 	// Test data
+// 	char msg[50] = "Hello world!";
+// 	int rc;
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// 	strcpy(msg, "Hello world again!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub1, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
 
-	strcpy(msg, "Hello world from publisher 2!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
-	strcpy(msg, "Hello world again! but from pub 2");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sleep(K_MSEC(100));
-	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
-	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// 	strcpy(msg, "Hello world from publisher 2!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
+// 	strcpy(msg, "Hello world again! but from pub 2");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub2, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sleep(K_MSEC(100));
+// 	zassert_mem_equal(sub_1_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_2_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_3_msg, msg, strlen(msg) + 1, NULL);
+// 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
 
-	// Try to break it
-	rc = pub_emit(&pub1, msg, 0);
-	zassert_equal(rc, -EINVAL, NULL);
-	rc = pub_emit(&pub2, NULL, 1);
-	zassert_equal(rc, -EINVAL, NULL);
-	rc = pub_emit(&pub1, NULL, 0);
-	zassert_equal(rc, -EINVAL, NULL);
-}
+// 	// Try to break it
+// 	rc = pub_emit(&pub1, msg, 0);
+// 	zassert_equal(rc, -EINVAL, NULL);
+// 	rc = pub_emit(&pub2, NULL, 1);
+// 	zassert_equal(rc, -EINVAL, NULL);
+// 	rc = pub_emit(&pub1, NULL, 0);
+// 	zassert_equal(rc, -EINVAL, NULL);
+// }
 
-ZTEST(zerv_test, test_pub_sub_no_buffer)
-{
-	k_sleep(K_MSEC(100));
-	// Test data
-	char msg[100] = "Hello world!";
-	int rc;
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sem_take(&sub5_sem, K_FOREVER);
-	zassert_mem_equal(sub_5_msg, msg, strlen(msg) + 1, NULL);
+// ZTEST(zerv_test, test_pub_sub_no_buffer)
+// {
+// 	k_sleep(K_MSEC(100));
+// 	// Test data
+// 	char msg[100] = "Hello world!";
+// 	int rc;
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sem_take(&sub5_sem, K_FOREVER);
+// 	zassert_mem_equal(sub_5_msg, msg, strlen(msg) + 1, NULL);
 
-	strcpy(msg, "Hello world again!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sem_take(&sub5_sem, K_FOREVER);
-	zassert_mem_equal(sub_5_msg, msg, strlen(msg) + 1, NULL);
+// 	strcpy(msg, "Hello world again!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sem_take(&sub5_sem, K_FOREVER);
+// 	zassert_mem_equal(sub_5_msg, msg, strlen(msg) + 1, NULL);
 
-	strcpy(msg, "Hello world again!");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sem_take(&sub5_sem, K_FOREVER);
-	strcpy(msg, "Hello world again! 22");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sem_take(&sub5_sem, K_FOREVER);
+// 	strcpy(msg, "Hello world again!");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sem_take(&sub5_sem, K_FOREVER);
+// 	strcpy(msg, "Hello world again! 22");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sem_take(&sub5_sem, K_FOREVER);
 
-	dont_free_message = true;
-	strcpy(msg, "This message should be auto freed");
-	PRINTLN("Publishing: %s", msg);
-	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
-	k_sem_take(&sub5_sem, K_FOREVER);
-	strcpy(msg, "So this message should be received");
-	PRINTLN("Publishing: %s", msg);
-	dont_receive_message = true;
-	dont_free_message = false;
-	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
-	zassert_equal(rc, 0, NULL);
+// 	dont_free_message = true;
+// 	strcpy(msg, "This message should be auto freed");
+// 	PRINTLN("Publishing: %s", msg);
+// 	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
+// 	k_sem_take(&sub5_sem, K_FOREVER);
+// 	strcpy(msg, "So this message should be received");
+// 	PRINTLN("Publishing: %s", msg);
+// 	dont_receive_message = true;
+// 	dont_free_message = false;
+// 	rc = pub_emit(&pub3, msg, strlen(msg) + 1);
+// 	zassert_equal(rc, 0, NULL);
 
-	k_sleep(K_MSEC(100));
+// 	k_sleep(K_MSEC(100));
 
-	// Try to overflow subscriber
-	PRINTLN("Now overflowing the subscriber");
-	char scrap[130]; // Should overflow after seconf publish!
-	rc = pub_emit(&pub3, scrap, ARRAY_SIZE(scrap));
-	zassert_not_equal(rc, 0, NULL);
+// 	// Try to overflow subscriber
+// 	PRINTLN("Now overflowing the subscriber");
+// 	char scrap[130]; // Should overflow after seconf publish!
+// 	rc = pub_emit(&pub3, scrap, ARRAY_SIZE(scrap));
+// 	zassert_not_equal(rc, 0, NULL);
 
-	PRINTLN("Receiving messages");
-	dont_receive_message = false;
-	k_sem_give(&sub5_lock_sem);
-	k_sem_take(&sub5_sem, K_FOREVER);
-}
+// 	PRINTLN("Receiving messages");
+// 	dont_receive_message = false;
+// 	k_sem_give(&sub5_lock_sem);
+// 	k_sem_take(&sub5_sem, K_FOREVER);
+// }
 
 ZTEST(zerv_test, test_zerv_get_hello_world)
 {

@@ -32,7 +32,7 @@ void zerv_thread(void)
 	}
 }
 
-ZERV_CMD_DEF(call_future_echo, req, resp)
+ZERV_CMD_HANDLER_DEF(call_future_echo, req, resp)
 {
 	future_echo_ret_t response = {0};
 	zerv_rc_t rc = zerv_call(future_service, future_echo,
@@ -49,7 +49,7 @@ ZERV_CMD_DEF(call_future_echo, req, resp)
 	}
 }
 
-ZERV_CMD_DEF(call_other, req, resp)
+ZERV_CMD_HANDLER_DEF(call_other, req, resp)
 {
 	future_other_ret_t response = {0};
 	zerv_rc_t rc = zerv_call(future_service, future_other,

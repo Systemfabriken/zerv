@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(zerv, CONFIG_ZERV_LOG_LEVEL);
  * PRIVATE FUNCTION DECLARATIONS
  ================================================================================================*/
 
-zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv, zerv_cmd_inst_t *req_instance,
+zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
 					       size_t client_req_params_len,
 					       const void *client_req_params,
 					       zerv_cmd_out_base_t *resp, size_t resp_len)
@@ -108,7 +108,7 @@ zerv_rc_t zerv_internal_client_request_handler(zervice_t *serv, zerv_cmd_inst_t 
  * PUBLIC FUNCTION DEFINITIONS
  ================================================================================================*/
 
-zerv_cmd_in_t *zerv_get_cmd_input(zervice_t *serv, k_timeout_t timeout)
+zerv_cmd_in_t *zerv_get_cmd_input(const zervice_t *serv, k_timeout_t timeout)
 {
 	if (serv == NULL) {
 		return NULL;
@@ -117,7 +117,7 @@ zerv_cmd_in_t *zerv_get_cmd_input(zervice_t *serv, k_timeout_t timeout)
 	return k_fifo_get(serv->fifo, timeout);
 }
 
-zerv_rc_t zerv_handle_request(zervice_t *serv, zerv_cmd_in_t *req_params)
+zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_cmd_in_t *req_params)
 {
 	if (serv == NULL || req_params == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -147,8 +147,8 @@ zerv_rc_t zerv_handle_request(zervice_t *serv, zerv_cmd_in_t *req_params)
 	return rc;
 }
 
-zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, zerv_cmd_inst_t *req_instance, void *resp,
-					k_timeout_t timeout)
+zerv_rc_t zerv_internal_get_future_resp(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
+					void *resp, k_timeout_t timeout)
 {
 	if (serv == NULL || req_instance == NULL || resp == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -182,7 +182,8 @@ zerv_rc_t zerv_internal_get_future_resp(zervice_t *serv, zerv_cmd_inst_t *req_in
 	return ret;
 }
 
-zerv_rc_t zerv_get_cmd_input_instance(zervice_t *serv, int req_id, zerv_cmd_inst_t **req_instance)
+zerv_rc_t zerv_get_cmd_input_instance(const zervice_t *serv, int req_id,
+				      zerv_cmd_inst_t **req_instance)
 {
 	if (serv == NULL || req_instance == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -196,7 +197,7 @@ zerv_rc_t zerv_get_cmd_input_instance(zervice_t *serv, int req_id, zerv_cmd_inst
 	return ZERV_RC_OK;
 }
 
-zerv_rc_t zerv_future_init(zervice_t *serv, zerv_cmd_inst_t *req_instance,
+zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
 			   zerv_cmd_in_t *req_params)
 {
 	if (serv == NULL || req_instance == NULL || req_params == NULL) {
@@ -232,25 +233,77 @@ void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc)
 	}
 }
 
-void _zerv_cmd_processor_thread(zervice_t *p_zervice, void (*init_callback)(void),
-				void (*post_event_handler_callback)(void))
+void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)
 {
+	if (p_zervice == NULL) {
+		LOG_ERR("Invalid arguments");
+		return;
+	}
 
-	if (init_callback) {
-		init_callback();
+	LOG_DBG("Starting command processor for %s", p_zervice->name);
+
+	while (true) {
+		zerv_cmd_in_t *p_req_params = k_fifo_get(p_zervice->fifo, K_FOREVER);
+		if (p_req_params == NULL) {
+			LOG_ERR("Failed to get request params from %s", p_zervice->name);
+			continue;
+		}
+
+		zerv_rc_t rc = zerv_handle_request(p_zervice, p_req_params);
+		if (rc != 0) {
+			LOG_ERR("Failed to handle request on %s", p_zervice->name);
+			continue;
+		}
+	}
+}
+
+void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events)
+{
+	if (p_zervice == NULL || zervice_events == NULL) {
+		return;
+	}
+
+	struct k_poll_event events[zervice_events->event_cnt];
+	for (size_t i = 0; i < zervice_events->event_cnt; i++) {
+		memcpy(&events[i], zervice_events->events[i].event, sizeof(struct k_poll_event));
+	}
+
+	LOG_DBG("Starting event processor for %s, num events %d", p_zervice->name,
+		zervice_events->event_cnt);
+
+	for (size_t i = 0; i < zervice_events->event_cnt; i++) {
+		events[i].state = K_POLL_STATE_NOT_READY;
 	}
 
 	while (true) {
-		zerv_cmd_in_t *p_input = zerv_get_cmd_input(p_zervice, K_FOREVER);
-		LOG_DBG("Received service request on %s", p_zervice->name);
-
-		zerv_rc_t rc = zerv_handle_request(p_zervice, p_input);
-		if (rc < ZERV_RC_OK) {
-			LOG_ERR("Failed to handle request on %s", p_zervice->name);
+		int rc = k_poll(events, zervice_events->event_cnt, K_FOREVER);
+		if (rc != 0) {
+			LOG_ERR("Failed to poll events for %s", p_zervice->name);
+			continue;
 		}
 
-		if (post_event_handler_callback) {
-			post_event_handler_callback();
+		// Handle the Zervice commands first
+		if (events[0].state == K_POLL_TYPE_FIFO_DATA_AVAILABLE) {
+			events[0].state = K_POLL_STATE_NOT_READY;
+			zerv_cmd_in_t *p_req_params = k_fifo_get(p_zervice->fifo, K_NO_WAIT);
+			if (p_req_params == NULL) {
+				LOG_ERR("Failed to get request params from %s", p_zervice->name);
+				continue;
+			}
+
+			zerv_rc_t rc = zerv_handle_request(p_zervice, p_req_params);
+			if (rc != 0) {
+				LOG_ERR("Failed to handle request on %s", p_zervice->name);
+				continue;
+			}
+		}
+
+		// Handle the Zervice events
+		for (size_t i = 1; i < zervice_events->event_cnt; i++) {
+			if (events[i].state == zervice_events->events[i].event->type) {
+				events[i].state = K_POLL_STATE_NOT_READY;
+				zervice_events->events[i].handler(events[i].obj);
+			}
 		}
 	}
 }
