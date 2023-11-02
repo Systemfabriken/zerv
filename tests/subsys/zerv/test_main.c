@@ -34,7 +34,7 @@ SUB_DEFINE(dummy_subscriber, 0);
 // Define a publisher with no subscribers
 PUB_DEFINE(lone_publisher);
 
-ZTEST_SUITE(zerv_test, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(zerv, NULL, NULL, NULL, NULL, NULL);
 
 void test_main(void)
 {
@@ -54,7 +54,7 @@ void test_main(void)
 
 	k_sleep(K_MSEC(100));
 
-	ztest_run_test_suite(zerv_test);
+	ztest_run_test_suite(zerv);
 	LOG_PRINTK("\n\n");
 }
 
@@ -204,7 +204,7 @@ void test_polling_thread(void)
 K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thread, NULL, NULL,
 		NULL, 5, 0, 0);
 
-// ZTEST(zerv_test, test_polling)
+// ZTEST(zerv, test_polling)
 // {
 // 	// Exit all the threads
 // 	polling_test_2 = true;
@@ -259,7 +259,7 @@ K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thre
 // 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
 // }
 
-// ZTEST(zerv_test, test_no_subscribers)
+// ZTEST(zerv, test_no_subscribers)
 // {
 // 	// Exit all the threads
 // 	char msg[50] = "Testing no subscribers!";
@@ -269,7 +269,7 @@ K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thre
 // 	zassert_equal(rc, 0, NULL);
 // }
 
-// ZTEST(zerv_test, test_pub_sub)
+// ZTEST(zerv, test_pub_sub)
 // {
 // 	k_sleep(K_MSEC(100));
 // 	// Test data
@@ -321,7 +321,7 @@ K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thre
 // 	zassert_equal(rc, -EINVAL, NULL);
 // }
 
-// ZTEST(zerv_test, test_pub_sub_no_buffer)
+// ZTEST(zerv, test_pub_sub_no_buffer)
 // {
 // 	k_sleep(K_MSEC(100));
 // 	// Test data
@@ -378,7 +378,7 @@ K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thre
 // 	k_sem_take(&sub5_sem, K_FOREVER);
 // }
 
-ZTEST(zerv_test, test_zerv_get_hello_world)
+ZTEST(zerv, hello_world)
 {
 	ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20, {
 		zassert_equal(rc, 0, NULL);
@@ -400,43 +400,53 @@ ZTEST(zerv_test, test_zerv_get_hello_world)
 	ZERV_CALL(zerv_test_service, fail, rc, p_ret, { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
 }
 
-ZTEST(zerv_test, test_zervice_poll)
+ZTEST(zerv, event_processor_thread)
 {
 	PRINTLN("Sending echo1 request");
 	ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World!"), 0, NULL);
+		PRINTLN("OK");
 	});
 
 	PRINTLN("Sending echo2 request");
 	ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World!"), 0, NULL);
+		PRINTLN("OK");
 	});
 
 	PRINTLN("Sending echo1 request");
 	ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World! 2"), 0, NULL);
+		PRINTLN("OK");
 	});
 
 	PRINTLN("Sending echo2 request");
 	ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2", {
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World! 2"), 0, NULL);
+		PRINTLN("OK");
 	});
 
 	PRINTLN("Sending fail1 request");
-	ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret,
-		  { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
+	ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret, {
+		zassert_equal(rc, ZERV_RC_ERROR, NULL);
+		PRINTLN("OK");
+	});
 
 	PRINTLN("Sending fail2 request");
-	ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret,
-		  { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
+	ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret, {
+		zassert_equal(rc, ZERV_RC_ERROR, NULL);
+		PRINTLN("OK");
+	});
 
+	PRINTLN("Signalling event processor thread by sem");
 	k_sem_give(&event_sem);
 	int rc = k_sem_take(&event_sem_response, K_SECONDS(1));
 	zassert_equal(rc, 0, NULL);
+	PRINTLN("OK");
 }
 
 // K_SEM_DEFINE(future_sem, 0, 1);
@@ -448,7 +458,7 @@ ZTEST(zerv_test, test_zervice_poll)
 // 	k_sem_give(&future_sem);
 // }
 
-// ZTEST(zerv_test, test_zerv_future_service)
+// ZTEST(zerv, test_zerv_future_service)
 // {
 // 	extern zervice_t future_service;
 // 	zerv_cmd_inst_t *future_echo_instance = future_service.cmd_instances[__future_echo_id];
