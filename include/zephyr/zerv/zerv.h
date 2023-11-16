@@ -40,10 +40,10 @@
  * source file
  */
 #define ZERV_DECL(name, commands...)                                                               \
-	FOR_EACH(__ZERV_CMD_HANDLER_FN_DECL, (;), commands)                                        \
-		__ZERV_DEFINE_CMD_INSTANCE_LIST(name, commands)                                    \
-	enum __##name##_cmds_e{FOR_EACH(__ZERV_CMD_ID_DECL, (, ), commands), __##name##_cmd_cnt};  \
-	extern const zervice_t name
+    FOR_EACH (__ZERV_CMD_HANDLER_FN_DECL, (;), commands)                                           \
+        __ZERV_DEFINE_CMD_INSTANCE_LIST(name, commands)                                            \
+    enum __##name##_cmds_e{ FOR_EACH (__ZERV_CMD_ID_DECL, (, ), commands), __##name##_cmd_cnt };   \
+    extern const zervice_t name
 
 /**
  * @brief Macro for defining a thread-less zervice in a source file.
@@ -53,17 +53,17 @@
  * inputs and outputs while they are being processed.
  */
 #define ZERV_DEF(zervice_name, heap_size)                                                          \
-	static K_HEAP_DEFINE(__##zervice_name##_heap, heap_size);                                  \
-	static K_FIFO_DEFINE(__##zervice_name##_fifo);                                             \
-	static K_MUTEX_DEFINE(__##zervice_name##_mtx);                                             \
-	const zervice_t zervice_name __aligned(4) = {                                              \
-		.name = #zervice_name,                                                             \
-		.heap = &__##zervice_name##_heap,                                                  \
-		.fifo = &__##zervice_name##_fifo,                                                  \
-		.mtx = &__##zervice_name##_mtx,                                                    \
-		.cmd_instance_cnt = __##zervice_name##_cmd_cnt,                                    \
-		.cmd_instances = zervice_name##_cmd_instances,                                     \
-	};
+    static K_HEAP_DEFINE(__##zervice_name##_heap, heap_size);                                      \
+    static K_FIFO_DEFINE(__##zervice_name##_fifo);                                                 \
+    static K_MUTEX_DEFINE(__##zervice_name##_mtx);                                                 \
+    const zervice_t zervice_name __aligned(4) = {                                                  \
+        .name = #zervice_name,                                                                     \
+        .heap = &__##zervice_name##_heap,                                                          \
+        .fifo = &__##zervice_name##_fifo,                                                          \
+        .mtx = &__##zervice_name##_mtx,                                                            \
+        .cmd_instance_cnt = __##zervice_name##_cmd_cnt,                                            \
+        .cmd_instances = zervice_name##_cmd_instances,                                             \
+    };
 
 /**
  * @brief Macro for defining a zervice that is handeled by a thread. The thread will process
@@ -77,10 +77,10 @@
  * @param prio The priority of the zervice thread.
  */
 #define ZERV_DEF_CMD_PROCESSOR_THREAD(zervice, heap_size, stack_size, prio)                        \
-	ZERV_DEF(zervice, heap_size);                                                              \
-	static K_THREAD_DEFINE(__##zervice##_thread, stack_size,                                   \
-			       (k_thread_entry_t)__zerv_cmd_processor_thread_body, &zervice, NULL, \
-			       NULL, prio, 0, 0)
+    ZERV_DEF(zervice, heap_size);                                                                  \
+    static K_THREAD_DEFINE(__##zervice##_thread, stack_size,                                       \
+                           (k_thread_entry_t)__zerv_cmd_processor_thread_body, &zervice, NULL,     \
+                           NULL, prio, 0, 0)
 
 /**
  * @brief Macro for defining a zervice that is handled on a thread that processes both zerv commands
@@ -96,21 +96,22 @@
  * must be declared before the zervice thread.
  */
 #define ZERV_EVENT_PROCESSOR_THREAD_DEF(zervice, heap_size, stack_size, prio, zerv_events...)      \
-	ZERV_DEF(zervice, heap_size);                                                              \
-	static const struct k_poll_event __##zervice##_k_poll_event =                              \
-		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,                   \
-						K_POLL_MODE_NOTIFY_ONLY, &__##zervice##_fifo, 0);  \
-	static zerv_event_t __zerv_event_##zervice = {                                             \
-		.event = &__##zervice##_k_poll_event, .handler = NULL, .type = 0};                 \
-	static zerv_event_t *__##zervice##_events[] = {                                            \
-		&__zerv_event_##zervice, FOR_EACH(__zerv_event_t_INIT, (, ), zerv_events)};        \
-	static zerv_events_t __##zervice##_events_arg = {                                          \
-		.events = __##zervice##_events,                                                    \
-		.event_cnt = ARRAY_SIZE(__##zervice##_events),                                     \
-	};                                                                                         \
-	static K_THREAD_DEFINE(__##zervice##_thread, stack_size,                                   \
-			       (k_thread_entry_t)__zerv_event_processor_thread_body, &zervice,     \
-			       &__##zervice##_events_arg, NULL, prio, 0, 0)
+    ZERV_DEF(zervice, heap_size);                                                                  \
+    static const struct k_poll_event __##zervice##_k_poll_event = K_POLL_EVENT_STATIC_INITIALIZER( \
+            K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, &__##zervice##_fifo, 0);     \
+    static zerv_event_t __zerv_event_##zervice = { .event = &__##zervice##_k_poll_event,           \
+                                                   .handler = NULL,                                \
+                                                   .type = 0 };                                    \
+    static zerv_event_t *__##zervice##_events[] = {                                                \
+        &__zerv_event_##zervice, FOR_EACH (__zerv_event_t_INIT, (, ), zerv_events)                 \
+    };                                                                                             \
+    static zerv_events_t __##zervice##_events_arg = {                                              \
+        .events = __##zervice##_events,                                                            \
+        .event_cnt = ARRAY_SIZE(__##zervice##_events),                                             \
+    };                                                                                             \
+    static K_THREAD_DEFINE(__##zervice##_thread, stack_size,                                       \
+                           (k_thread_entry_t)__zerv_event_processor_thread_body, &zervice,         \
+                           &__##zervice##_events_arg, NULL, prio, 0, 0)
 
 /*=================================================================================================
  * ZERV COMMAND MACROS
@@ -123,7 +124,7 @@
  *
  * @param ... The types and names of the input parameters.
  */
-#define ZERV_IN(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+#define ZERV_IN(...) FOR_EACH (__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
 /**
  * @brief Macro for declaring an empty zervice command input parameter.
@@ -137,7 +138,7 @@
  *
  * @param ... The types and names of the output parameters.
  */
-#define ZERV_OUT(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+#define ZERV_OUT(...) FOR_EACH (__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
 /**
  * @brief Macro for declaring an empty zervice command output parameter.
@@ -159,16 +160,16 @@
  * @note The command must be defined in the source file with the ZERV_CMD_HANDLER_DEF macro.
  */
 #define ZERV_CMD_DECL(name, in, out)                                                               \
-	typedef struct name##_param {                                                              \
-		in                                                                                 \
-	} name##_param_t;                                                                          \
-	typedef void (*name##_resp_handler_t)(void);                                               \
-	typedef struct name##_ret {                                                                \
-		zerv_rc_t rc;                                                                      \
-		name##_resp_handler_t on_delayed_response;                                         \
-		out                                                                                \
-	} name##_ret_t;                                                                            \
-	extern zerv_cmd_inst_t __##name
+    typedef struct name##_param {                                                                  \
+        in                                                                                         \
+    } name##_param_t;                                                                              \
+    typedef void (*name##_resp_handler_t)(void);                                                   \
+    typedef struct name##_ret {                                                                    \
+        zerv_rc_t rc;                                                                              \
+        name##_resp_handler_t on_delayed_response;                                                 \
+        out                                                                                        \
+    } name##_ret_t;                                                                                \
+    extern zerv_cmd_inst_t __##name
 
 /**
  * @brief Macro for defining a zervice request handler function in a source file.
@@ -180,9 +181,9 @@
  * ZERV_OUT macro used when declaring the command.
  */
 #define ZERV_CMD_HANDLER_DEF(cmd_name, in, out)                                                    \
-	static K_SEM_DEFINE(__##cmd_name##_future_sem, 0, 1);                                      \
-	static cmd_name##_ret_t __##cmd_name##_future_response;                                    \
-	zerv_cmd_inst_t __##cmd_name __aligned(4) = {                                              \
+    static K_SEM_DEFINE(__##cmd_name##_future_sem, 0, 1);                                          \
+    static cmd_name##_ret_t __##cmd_name##_future_response;                                        \
+    zerv_cmd_inst_t __##cmd_name __aligned(4) = {                                              \
 		.name = #cmd_name,                                                                 \
 		.id = __##cmd_name##_id,                                                           \
 		.is_locked = ATOMIC_INIT(false),                                                   \
@@ -195,8 +196,8 @@
 				.resp_len = sizeof(cmd_name##_ret_t),                              \
 				.resp = (zerv_cmd_out_base_t *)&__##cmd_name##_future_response,    \
 			},                                                                         \
-	};                                                                                         \
-	zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *in, cmd_name##_ret_t *out)
+	};   \
+    zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *in, cmd_name##_ret_t *out)
 
 /*=================================================================================================
  * ZERV EVENT MACROS
@@ -212,12 +213,12 @@
  * object.
  */
 #define ZERV_EVENT_DEF(name, _event_type, _event_mode, _event_obj)                                 \
-	static const struct k_poll_event __##name##_event =                                        \
-		K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj, 0);          \
-	static void __##name##_event_handler(void *obj);                                           \
-	static zerv_event_t __zerv_event_##name = {.event = &__##name##_event,                     \
-						   .handler = __##name##_event_handler,            \
-						   .type = _event_type}
+    static const struct k_poll_event __##name##_event =                                            \
+            K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj, 0);              \
+    static void __##name##_event_handler(void *obj);                                               \
+    static zerv_event_t __zerv_event_##name = { .event = &__##name##_event,                        \
+                                                .handler = __##name##_event_handler,               \
+                                                .type = _event_type }
 
 /**
  * @brief Macro for defining a service event handler function.
@@ -232,8 +233,8 @@
  * @param zervice The name of the zervice.
  */
 #define ZERV_K_POLL_EVENT_INITIALIZER(zervice)                                                     \
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,  \
-					&__##zervice##_fifo, 0)
+    K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,      \
+                                    &__##zervice##_fifo, 0)
 
 /*=================================================================================================
  * ZERV PUB-SUB MACROS
@@ -281,25 +282,17 @@
  * variable is defined by the macro.
  * @param[out] p_ret The identifier of the pointer to the response storage, will be
  * NULL if no response is expected. The pointer is defined by the macro.
- * @param[in] params_and_body... The arguments to the command. The arguments should follow the
+ * @param[in] params... The arguments to the command. The arguments should follow the
  * format specified by the ZERV_CMD_PARAM macro. The last argument should be the code block to
  * execute when the response is received. The code block should be surrounded by curly
  * brackets.
  */
-#define ZERV_CALL(zervice, cmd, retcode, p_ret, params_and_body...)                                \
-	{                                                                                          \
-		cmd##_ret_t __##cmd##_response;                                                    \
-		cmd##_ret_t *p_ret = &__##cmd##_response;                                          \
-		zerv_rc_t retcode = 0;                                                             \
-		{                                                                                  \
-			cmd##_param_t __##cmd##_request = {                                        \
-				REVERSE_ARGS(GET_ARGS_LESS_N(1, REVERSE_ARGS(params_and_body)))};  \
-			retcode = zerv_internal_client_request_handler(                            \
-				&zervice, &__##cmd, sizeof(cmd##_param_t), &__##cmd##_request,     \
-				(zerv_cmd_out_base_t *)p_ret, sizeof(cmd##_ret_t));                \
-		}                                                                                  \
-		GET_ARG_N(1, REVERSE_ARGS(params_and_body));                                       \
-	}
+#define ZERV_CALL(zervice, cmd, retcode, p_ret, params...)                                         \
+    cmd##_ret_t __##cmd##_response;                                                                \
+    cmd##_ret_t *p_ret = &__##cmd##_response;                                                      \
+    zerv_rc_t retcode = zerv_internal_client_request_handler(                                      \
+            &zervice, &__##cmd, sizeof(cmd##_param_t), &(cmd##_param_t){ params },                 \
+            (zerv_cmd_out_base_t *)p_ret, sizeof(cmd##_ret_t));
 
 /*=================================================================================================
  * PUBLIC FUNCTION DECLARATIONS
@@ -346,7 +339,7 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_cmd_in_t *req);
  * @return  ZERV_RC return code.
  */
 zerv_rc_t zerv_get_cmd_input_instance(const zervice_t *serv, int req_id,
-				      zerv_cmd_inst_t **req_instance);
+                                      zerv_cmd_inst_t **req_instance);
 
 /**
  * @brief Used from the service thread to initialize a future.
@@ -358,7 +351,7 @@ zerv_rc_t zerv_get_cmd_input_instance(const zervice_t *serv, int req_id,
  * @return N/A
  */
 zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
-			   zerv_cmd_in_t *req_params);
+                           zerv_cmd_in_t *req_params);
 
 /**
  * @brief Check if a future request has a delayed response.
@@ -377,8 +370,8 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  * request.
  */
 #define zerv_future_get_params(cmd_name, req_params_handle_name)                                   \
-	cmd_name##_param_t *req_params_handle_name =                                               \
-		(cmd_name##_param_t *)&__##cmd_name.future.req_params->client_req_params.data
+    cmd_name##_param_t *req_params_handle_name =                                                   \
+            (cmd_name##_param_t *)&__##cmd_name.future.req_params->client_req_params.data
 
 /**
  * @brief Get the response storage of a future request.
@@ -389,7 +382,7 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  * @return N/A
  */
 #define zerv_future_get_response(cmd_name, resp_handle_name)                                       \
-	cmd_name##_ret_t *resp_handle_name = (cmd_name##_ret_t *)__##cmd_name.future.resp
+    cmd_name##_ret_t *resp_handle_name = (cmd_name##_ret_t *)__##cmd_name.future.resp
 
 /**
  * @brief Send response to a delayed request.
@@ -400,7 +393,7 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  * @return N/A
  */
 #define zerv_future_signal_response(cmd_name, return_code)                                         \
-	_zerv_future_signal_response(&__##cmd_name, return_code)
+    _zerv_future_signal_response(&__##cmd_name, return_code)
 
 /**
  * @brief Calls a service request.
@@ -425,9 +418,9 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  * return the result of the request handler function.
  */
 #define zerv_call(zervice, cmd_name, p_req_params, p_response_dst)                                 \
-	zerv_internal_client_request_handler(&zervice, &__##cmd_name, sizeof(cmd_name##_param_t),  \
-					     p_req_params, (zerv_cmd_out_base_t *)p_response_dst,  \
-					     sizeof(cmd_name##_ret_t));
+    zerv_internal_client_request_handler(&zervice, &__##cmd_name, sizeof(cmd_name##_param_t),      \
+                                         p_req_params, (zerv_cmd_out_base_t *)p_response_dst,      \
+                                         sizeof(cmd_name##_ret_t));
 
 /**
  * @brief Get the future response of a request.
@@ -451,6 +444,6 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  * will be stored in future_echo_resp.
  */
 #define zerv_get_future(zervice, cmd_name, p_response_dst, timeout)                                \
-	zerv_internal_get_future_resp(&zervice, &__##cmd_name, p_response_dst, timeout)
+    zerv_internal_get_future_resp(&zervice, &__##cmd_name, p_response_dst, timeout)
 
 #endif // _ZERV_H_
