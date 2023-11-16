@@ -25,6 +25,19 @@ ZERV_CMD_HANDLER_DEF(echo, req, resp)
 
 ZERV_CMD_HANDLER_DEF(fail, req, resp)
 {
-	LOG_DBG("Received request: dummy: %d", req->dummy);
 	return ZERV_RC_ERROR;
+}
+
+ZERV_CMD_HANDLER_DEF(read_hello_world, req, resp)
+{
+	LOG_DBG("Received request");
+	strcpy(resp->str, "Hello World!");
+	return ZERV_RC_OK;
+}
+
+ZERV_CMD_HANDLER_DEF(print_hello_world, req, resp)
+{
+	LOG_DBG("Received request");
+	LOG_INF("Hello World!");
+	return ZERV_RC_OK;
 }

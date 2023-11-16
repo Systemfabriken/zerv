@@ -385,6 +385,12 @@ ZTEST(zerv, hello_world)
 		zassert_equal(p_ret->a, 10, NULL);
 		zassert_equal(p_ret->b, 20, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
+		if (p_ret->a == 10 && p_ret->b == 20) {
+			PRINTLN("get_hello_world returned: %s", p_ret->str);
+		} else {
+			PRINTLN("get_hello_world returned: %s, but the parameters were wrong!",
+				p_ret->str);
+		}
 	});
 
 	ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!", {
@@ -398,6 +404,13 @@ ZTEST(zerv, hello_world)
 	});
 
 	ZERV_CALL(zerv_test_service, fail, rc, p_ret, { zassert_equal(rc, ZERV_RC_ERROR, NULL); });
+
+	ZERV_CALL(zerv_test_service, read_hello_world, rc, p_ret, {
+		zassert_equal(rc, 0, NULL);
+		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
+	});
+
+	ZERV_CALL(zerv_test_service, print_hello_world, rc, p_ret, { zassert_equal(rc, 0, NULL); });
 }
 
 ZTEST(zerv, event_processor_thread)

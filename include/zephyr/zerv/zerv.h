@@ -126,6 +126,11 @@
 #define ZERV_IN(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
 /**
+ * @brief Macro for declaring an empty zervice command input parameter.
+ */
+#define ZERV_IN_EMPTY ZERV_IN(char __empty)
+
+/**
  * @brief Macro for declaring a zervice command output parameter.
  *
  * Should be used in the ZERV_CMD_DECL macro to declare the output parameters of a command.
@@ -133,6 +138,11 @@
  * @param ... The types and names of the output parameters.
  */
 #define ZERV_OUT(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+
+/**
+ * @brief Macro for declaring an empty zervice command output parameter.
+ */
+#define ZERV_OUT_EMPTY ZERV_OUT(char __empty)
 
 /**
  * @brief Macro for declaring a zervice command in a header file.
