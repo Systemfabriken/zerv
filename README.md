@@ -1,4 +1,4 @@
-![Minimalistic UML-inspired design showcasing interconnected microservices nodes  Each node has symbols such as a temperature sensor](https://github.com/Systemfabriken/zerv/assets/26245600/80083b13-579b-4d1b-89b5-f30ef7ae33e8)
+![Zerv_logo](Zerv_logo.png)
 
 ## Overview
 
@@ -42,7 +42,7 @@ Zerv is released under [LICENSE NAME], which provides details on the usage and r
 
 ## Support
 
-For support, questions, or more information, please visit our [issues page](LINK_TO_ISSUES_PAGE) or contact us at [CONTACT_EMAIL](albin@systemfabriken.tech).
+For support, questions, or more information, please visit our [issues page](https://github.com/Systemfabriken/zerv/issues) or contact us at [albin@systemfabriken.tech](albin@systemfabriken.tech).
 
 ## Acknowledgments
 
