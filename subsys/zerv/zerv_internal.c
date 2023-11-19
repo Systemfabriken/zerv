@@ -272,6 +272,16 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 		zervice_events->event_cnt);
 
 	for (size_t i = 0; i < zervice_events->event_cnt; i++) {
+		if (events[i].type == K_POLL_TYPE_SIGNAL) {
+			if (!events[i].signal || events[i].signal != events[i].obj) {
+				LOG_ERR("Zerv k_poll_signal event is erronously initiated!");
+				continue;
+			}
+			k_poll_signal_init(events[i].signal);
+			k_poll_event_init(&events[i], K_POLL_TYPE_SIGNAL, events[i].mode,
+					  events[i].signal);
+			k_poll_signal_reset(events[i].signal);
+		}
 		events[i].state = K_POLL_STATE_NOT_READY;
 	}
 
@@ -300,10 +310,13 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 		}
 
 		// Handle the Zervice events
+		LOG_DBG("Received event on %s", p_zervice->name);
 		for (size_t i = 1; i < zervice_events->event_cnt; i++) {
 			if (events[i].state == events[i].type) {
-				LOG_DBG("Received event on %s", p_zervice->name);
 				zervice_events->events[i]->handler(events[i].obj);
+			}
+			if (events[i].type == K_POLL_TYPE_SIGNAL) {
+				k_poll_signal_reset(events[i].signal);
 			}
 			events[i].state = K_POLL_STATE_NOT_READY;
 		}
