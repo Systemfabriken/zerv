@@ -38,7 +38,7 @@ We welcome contributions to the Zerv project. If you're interested in contributi
 
 ## License
 
-Zerv is released under [LICENSE NAME], which provides details on the usage and redistribution terms.
+Zerv is released under [Apache 2.0 License](LICENSE), which provides details on the usage and redistribution terms.
 
 ## Support
 
