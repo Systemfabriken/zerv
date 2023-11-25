@@ -381,7 +381,7 @@ K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thre
 ZTEST(zerv, hello_world)
 {
 	{
-		ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20);
+		ZERV_CMD_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20);
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(p_ret->a, 10, NULL);
 		zassert_equal(p_ret->b, 20, NULL);
@@ -395,30 +395,30 @@ ZTEST(zerv, hello_world)
 	}
 
 	{
-		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!");
+		ZERV_CMD_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
 	}
 
 	{
-		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World! 2");
+		ZERV_CMD_CALL(zerv_test_service, echo, rc, p_ret, "Hello World! 2");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World! 2"), 0, NULL);
 	}
 
 	{
-		ZERV_CALL(zerv_test_service, fail, rc, p_ret);
+		ZERV_CMD_CALL(zerv_test_service, fail, rc, p_ret);
 		zassert_equal(rc, ZERV_RC_ERROR, NULL);
 	}
 
 	{
-		ZERV_CALL(zerv_test_service, read_hello_world, rc, p_ret);
+		ZERV_CMD_CALL(zerv_test_service, read_hello_world, rc, p_ret);
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
 	}
 
 	{
-		ZERV_CALL(zerv_test_service, print_hello_world, rc, p_ret);
+		ZERV_CMD_CALL(zerv_test_service, print_hello_world, rc, p_ret);
 		zassert_equal(rc, 0, NULL);
 	}
 }
@@ -427,7 +427,7 @@ ZTEST(zerv, event_processor_thread)
 {
 	PRINTLN("Sending echo1 request");
 	{
-		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!");
+		ZERV_CMD_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World!"), 0, NULL);
 		PRINTLN("OK");
@@ -435,7 +435,7 @@ ZTEST(zerv, event_processor_thread)
 
 	PRINTLN("Sending echo2 request");
 	{
-		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!");
+		ZERV_CMD_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World!"), 0, NULL);
 		PRINTLN("OK");
@@ -443,7 +443,7 @@ ZTEST(zerv, event_processor_thread)
 
 	PRINTLN("Sending echo1 request");
 	{
-		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2");
+		ZERV_CMD_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World! 2"), 0, NULL);
 		PRINTLN("OK");
@@ -451,7 +451,7 @@ ZTEST(zerv, event_processor_thread)
 
 	PRINTLN("Sending echo2 request");
 	{
-		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2");
+		ZERV_CMD_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World! 2"), 0, NULL);
 		PRINTLN("OK");
@@ -459,14 +459,14 @@ ZTEST(zerv, event_processor_thread)
 
 	PRINTLN("Sending fail1 request");
 	{
-		ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret);
+		ZERV_CMD_CALL(zerv_poll_service_1, fail1, rc, p_ret);
 		zassert_equal(rc, ZERV_RC_ERROR, NULL);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending fail2 request");
 	{
-		ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret);
+		ZERV_CMD_CALL(zerv_poll_service_2, fail2, rc, p_ret);
 		zassert_equal(rc, ZERV_RC_ERROR, NULL);
 		PRINTLN("OK");
 	}
@@ -495,7 +495,7 @@ ZTEST(zerv, event_processor_thread)
 // 	PRINTLN("Sending syncronous echo request");
 // 	future_echo_ret_t future_echo_resp = {0};
 // 	zerv_rc_t rc =
-// 		zerv_call(future_service, future_echo,
+// 		ZERV_CMD_CALL(future_service, future_echo,
 // 			  (&(future_echo_param_t){.is_delayed = false, .str = "Hello World!"}),
 // 			  &future_echo_resp);
 
@@ -509,7 +509,7 @@ ZTEST(zerv, event_processor_thread)
 // 	PRINTLN("Sending asyncronous echo request and blocking until it is handled");
 // 	future_echo_param_t params = {
 // 		.is_delayed = true, .delay = K_MSEC(100), .str = "Async Hello Blocking!"};
-// 	rc = zerv_call(future_service, future_echo, &params, &future_echo_resp);
+// 	rc = ZERV_CMD_CALL(future_service, future_echo, &params, &future_echo_resp);
 // 	zassert_equal(rc, ZERV_RC_FUTURE);
 // 	zassert_true(future_echo_instance->future.is_active);
 // 	zassert_not_null(future_echo_instance->future.req_params);
@@ -530,7 +530,7 @@ ZTEST(zerv, event_processor_thread)
 // 	PRINTLN("Sending asyncronous echo request and polling until it is handled");
 // 	params = (future_echo_param_t){
 // 		.is_delayed = true, .delay = K_MSEC(100), .str = "Async Hello Polling!"};
-// 	rc = zerv_call(future_service, future_echo, &params, &future_echo_resp);
+// 	rc = ZERV_CMD_CALL(future_service, future_echo, &params, &future_echo_resp);
 // 	zassert_equal(rc, ZERV_RC_FUTURE);
 // 	zassert_true(future_echo_instance->future.is_active);
 // 	zassert_not_null(future_echo_instance->future.req_params);
@@ -547,7 +547,7 @@ ZTEST(zerv, event_processor_thread)
 // 			PRINTLN("Sending another request to the same service");
 // 			call_other_ret_t call_other_resp = {0};
 // 			zerv_rc_t client_call_rc =
-// 				zerv_call(future_client, call_other,
+// 				ZERV_CMD_CALL(future_client, call_other,
 // 					  (&(call_other_param_t){.expected_rc = ZERV_RC_OK}),
 // 					  &call_other_resp);
 // 			zassert_equal(client_call_rc, ZERV_RC_OK);
@@ -566,7 +566,7 @@ ZTEST(zerv, event_processor_thread)
 // 	PRINTLN("Calling asynchronous request from another thread");
 // 	call_future_echo_ret_t call_future_echo_resp = {0};
 // 	call_future_echo_resp.on_delayed_response = on_future_cb;
-// 	rc = zerv_call(future_client, call_future_echo,
+// 	rc = ZERV_CMD_CALL(future_client, call_future_echo,
 // 		       (&(call_future_echo_param_t){.expected_rc = ZERV_RC_OK}),
 // 		       &call_future_echo_resp);
 // 	zassert_equal(rc, ZERV_RC_OK);
@@ -577,7 +577,7 @@ ZTEST(zerv, event_processor_thread)
 // 		.is_delayed = true, .delay = K_MSEC(100), .str = "Async Hello Callback!"};
 // 	future_echo_ret_t future_echo_resp2 = {0};
 // 	future_echo_resp2.on_delayed_response = on_future_cb;
-// 	rc = zerv_call(future_service, future_echo, &params, &future_echo_resp2);
+// 	rc = ZERV_CMD_CALL(future_service, future_echo, &params, &future_echo_resp2);
 // 	zassert_equal(rc, ZERV_RC_FUTURE);
 // 	zassert_true(future_echo_instance->future.is_active);
 // 	zassert_not_null(future_echo_instance->future.req_params);

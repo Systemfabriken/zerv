@@ -35,11 +35,11 @@ void zerv_thread(void)
 ZERV_CMD_HANDLER_DEF(call_future_echo, req, resp)
 {
 	future_echo_ret_t response = {0};
-	zerv_rc_t rc = zerv_call(future_service, future_echo,
-				 (&(future_echo_param_t){.is_delayed = false,
-							 .delay = K_NO_WAIT,
-							 .str = "Hello from client!"}),
-				 &response);
+	zerv_rc_t rc = ZERV_CMD_CALL(future_service, future_echo,
+				     (&(future_echo_param_t){.is_delayed = false,
+							     .delay = K_NO_WAIT,
+							     .str = "Hello from client!"}),
+				     &response);
 	resp->was_expected_rc = rc == req->expected_rc;
 
 	if (rc == ZERV_RC_FUTURE) {
@@ -52,8 +52,9 @@ ZERV_CMD_HANDLER_DEF(call_future_echo, req, resp)
 ZERV_CMD_HANDLER_DEF(call_other, req, resp)
 {
 	future_other_ret_t response = {0};
-	zerv_rc_t rc = zerv_call(future_service, future_other,
-				 (&(future_other_param_t){.str = "Hello from client!"}), &response);
+	zerv_rc_t rc =
+		ZERV_CMD_CALL(future_service, future_other,
+			      (&(future_other_param_t){.str = "Hello from client!"}), &response);
 	if (rc < 0) {
 		LOG_ERR("Failed to call future_other");
 		resp->was_expected_rc = false;

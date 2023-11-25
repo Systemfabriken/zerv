@@ -32,7 +32,7 @@ participant "**scheduler**" as sched
 
     ' Client request call
     rnote over client: Client calls the request **req1** on service **service**
-    client -> zerv_api ++: **zerv_call(service, req1, params*, response*)** 
+    client -> zerv_api ++: **ZERV_CMD_CALL(service, req1, params*, response*)** 
     zerv_api -> zerv_api: lock req1 mutex
     zerv_api -> zerv_heap ++: allocate params on the heap
     zerv_heap --> zerv_api: zerv_req_params*
