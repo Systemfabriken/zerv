@@ -7,7 +7,6 @@
  *              |_____/ \__, |___/\__\___|_| |_| |_|_|  \__,_|_.__/|_|  |_|_|\_\___|_| |_|
  *                       __/ |
  *                      |___/
- * Description:
  *
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) 2023 Systemfabriken AB
