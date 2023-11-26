@@ -78,7 +78,6 @@
 	typedef void (*name##_resp_handler_t)(void);                                               \
 	typedef struct name##_ret {                                                                \
 		zerv_rc_t rc;                                                                      \
-		name##_resp_handler_t on_delayed_response;                                         \
 		out                                                                                \
 	} name##_ret_t;                                                                            \
 	extern zerv_cmd_inst_t __##name
