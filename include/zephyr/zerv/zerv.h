@@ -150,35 +150,6 @@
 					&__##zervice##_fifo, 0)
 
 /*=================================================================================================
- * ZERV PUB-SUB MACROS
- *===============================================================================================*/
-
-/**
- * @brief Macro for declaring a zervice publisher topic in a header file.
- *
- * @param name The name of the topic.
- * @param params... The parameters of the topic. Should be declared with the ZERV_IN macro.
- */
-#define ZERV_PUB_TOPIC_DECL(name, params...)
-
-/**
- * @def ZERV_PUB_TOPIC_EMIT(name, params...)
- * @brief Macro for emitting a message on a Zerv publisher topic.
- *
- * This macro is used to emit a message on a Zerv publisher topic. The name of the topic
- * and any parameters to be included in the message are passed as arguments to the macro.
- *
- * Example usage:
- * @code{.c}
- * ZERV_PUB_TOPIC_EMIT(my_topic, "Hello, world!", 42);
- * @endcode
- *
- * @param name The name of the Zerv publisher topic to emit the message on.
- * @param params The parameters to include in the message.
- */
-#define ZERV_PUB_TOPIC_EMIT(name, params...)
-
-/*=================================================================================================
  * PUBLIC FUNCTION DECLARATIONS
  *===============================================================================================*/
 
@@ -278,29 +249,6 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  */
 #define zerv_future_signal_response(cmd_name, return_code)                                         \
 	_zerv_future_signal_response(&__##cmd_name, return_code)
-
-/**
- * @brief Calls a service request.
- *
- * @param zervice The name of the service.
- * @param cmd_name The name of the request.
- * @param p_req_params Pointer to the parameters to the request.
- * @param p_response_dst Pointer to the destination of the response.
- *
- * @return ZERV_RC_OK if the request was successfully called, ZERV_RC_FUTURE if the response will be
- * delayed ZERV_RC_ERROR if the request failed.
- *
- * @example
- *   future_echo_ret_t future_echo_resp = { 0 };
- *   zerv_rc_t rc = ZERV_CALL(future_service, future_echo,
- *                                 (&(future_echo_param_t){ .is_delayed = false, .str = "Hello
- * World!" }), &future_echo_resp);
- *
- * In this example we call a request called "future echo" on a service called "future service". If
- * the response is delayed this call will return ZERV_RC_FUTURE and the response will be received
- * later. If the response is not delayed the response will be received immediately and the call will
- * return the result of the request handler function.
- */
 
 /**
  * @brief Get the future response of a request.
