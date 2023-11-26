@@ -89,17 +89,8 @@ zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_i
 		return ZERV_RC_TIMEOUT;
 	}
 
-	// If the future is active, the response has been delayed and the request is still
-	// locked. We want to keep the service request locked to prevent other threads from
-	// calling the same request while the service is handling it. The request that is
-	// allocated on the heap is freed when the future is resolved.
-	if (!req_instance->future.is_active) {
-		k_heap_free(serv->heap, p_req_params);
-	} else {
-		return ZERV_RC_FUTURE;
-	}
-
 	LOG_DBG("Received response from %s: %s", serv->name, req_instance->name);
+	k_heap_free(serv->heap, p_req_params);
 	atomic_set(&req_instance->is_locked, false);
 	return resp->rc;
 }
@@ -132,54 +123,12 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_cmd_in_t *req_params)
 	zerv_rc_t rc = serv->cmd_instances[req_params->id]->handler(
 		req_params->client_req_params.data, req_params->resp);
 
-	if (rc == ZERV_RC_FUTURE) {
-		zerv_cmd_inst_t *req_instance = serv->cmd_instances[req_params->id];
-		LOG_DBG("Future returned from %s, request: %s", serv->name, req_instance->name);
-		req_instance->future.req_params = req_params;
-		req_instance->future.is_active = true;
-	}
-
 	if (rc < ZERV_RC_OK) {
 		LOG_ERR("Failed to handle request on %s", serv->name);
 	}
 	req_params->resp->rc = rc;
 	k_sem_give(req_params->response_sem);
 	return rc;
-}
-
-zerv_rc_t zerv_internal_get_future_resp(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
-					void *resp, k_timeout_t timeout)
-{
-	if (serv == NULL || req_instance == NULL || resp == NULL) {
-		return ZERV_RC_NULLPTR;
-	}
-
-	if (!req_instance->future.is_active) {
-		LOG_DBG("Future is not active or request is not locked");
-		return ZERV_RC_ERROR;
-	}
-
-	LOG_DBG("Waiting for future response from %s: %s", serv->name, req_instance->name);
-	int rc = k_sem_take(req_instance->future.sem, timeout);
-	if (rc != 0) {
-		LOG_DBG("Failed to wait for future response from %s: %s", serv->name,
-			req_instance->name);
-		return ZERV_RC_TIMEOUT;
-	}
-	LOG_DBG("Received future response from %s: %s", serv->name, req_instance->name);
-
-	LOG_DBG("Length of response: %d", req_instance->future.resp_len);
-	memcpy(resp, req_instance->future.resp, req_instance->future.resp_len);
-	zerv_rc_t ret = req_instance->future.resp->rc;
-	memset(req_instance->future.resp, 0, req_instance->future.resp_len);
-
-	// Cleanup the future
-	k_heap_free(serv->heap, req_instance->future.req_params);
-	req_instance->future.is_active = false;
-	req_instance->future.req_params = NULL;
-	atomic_set(&req_instance->is_locked, false);
-
-	return ret;
 }
 
 zerv_rc_t zerv_get_cmd_input_instance(const zervice_t *serv, int req_id,
@@ -195,42 +144,6 @@ zerv_rc_t zerv_get_cmd_input_instance(const zervice_t *serv, int req_id,
 
 	*req_instance = serv->cmd_instances[req_id];
 	return ZERV_RC_OK;
-}
-
-zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
-			   zerv_cmd_in_t *req_params)
-{
-	if (serv == NULL || req_instance == NULL || req_params == NULL) {
-		LOG_ERR("Invalid arguments");
-		return ZERV_RC_NULLPTR;
-	}
-
-	if (req_params->id >= serv->cmd_instance_cnt) {
-		LOG_ERR("Invalid request id");
-		return ZERV_RC_ERROR;
-	}
-
-	LOG_DBG("Initializing future for %s: %s", serv->name, req_instance->name);
-	req_instance->future.is_active = true;
-	req_instance->future.req_params = req_params;
-	req_instance->future.resp->handler = req_params->resp->handler;
-	return ZERV_RC_OK;
-}
-
-void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc)
-{
-	if (!req_instance->future.is_active) {
-		return;
-	}
-
-	LOG_DBG("Signaling future response from %s", req_instance->name);
-	req_instance->future.resp->rc = rc;
-	k_sem_give(req_instance->future.sem);
-	if (req_instance->future.resp->handler != NULL) {
-		LOG_DBG("Calling future handler @ %p", req_instance->future.resp->handler);
-		req_instance->future.resp->handler();
-		req_instance->future.resp->handler = NULL;
-	}
 }
 
 void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)

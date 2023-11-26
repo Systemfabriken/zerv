@@ -94,20 +94,11 @@
  */
 #define ZERV_CMD_HANDLER_DEF(cmd_name, in, out)                                                    \
 	static K_SEM_DEFINE(__##cmd_name##_future_sem, 0, 1);                                      \
-	static cmd_name##_ret_t __##cmd_name##_future_response;                                    \
 	zerv_cmd_inst_t __##cmd_name __aligned(4) = {                                              \
 		.name = #cmd_name,                                                                 \
 		.id = __##cmd_name##_id,                                                           \
 		.is_locked = ATOMIC_INIT(false),                                                   \
 		.handler = (zerv_cmd_abstract_handler_t)__##cmd_name##_handler,                    \
-		.future =                                                                          \
-			{                                                                          \
-				.is_active = false,                                                \
-				.sem = &__##cmd_name##_future_sem,                                 \
-				.req_params = NULL,                                                \
-				.resp_len = sizeof(cmd_name##_ret_t),                              \
-				.resp = (zerv_cmd_out_base_t *)&__##cmd_name##_future_response,    \
-			},                                                                         \
 	};                                                                                         \
 	zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *in, cmd_name##_ret_t *out)
 

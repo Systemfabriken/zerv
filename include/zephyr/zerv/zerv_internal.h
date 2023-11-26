@@ -36,8 +36,7 @@ typedef enum {
 	ZERV_RC_ERROR = -EFAULT,
 	ZERV_RC_TIMEOUT = -EAGAIN,
 	ZERV_RC_LOCKED = -EBUSY,
-	ZERV_RC_OK = 0,
-	ZERV_RC_FUTURE = 1,
+	ZERV_RC_OK = 0
 } zerv_rc_t;
 
 static inline const char *zerv_rc_to_str(zerv_rc_t rc)
@@ -55,8 +54,6 @@ static inline const char *zerv_rc_to_str(zerv_rc_t rc)
 		return "ZERV_RC_LOCKED";
 	case ZERV_RC_OK:
 		return "ZERV_RC_OK";
-	case ZERV_RC_FUTURE:
-		return "ZERV_RC_FUTURE";
 	default:
 		return "UNKNOWN";
 	}
@@ -87,14 +84,6 @@ typedef struct {
 	zerv_cmd_in_bytes_t client_req_params;
 } zerv_cmd_in_t;
 
-typedef struct {
-	bool is_active;
-	struct k_sem *sem;
-	zerv_cmd_in_t *req_params;
-	size_t resp_len;
-	zerv_cmd_out_base_t *resp;
-} zerv_cmd_out_future_t;
-
 /**
  * @brief The type of a zervice command.
  * @note This is used internally to represent a zervice command.
@@ -104,7 +93,6 @@ typedef struct {
 	int id;
 	atomic_t is_locked;
 	zerv_cmd_abstract_handler_t handler;
-	zerv_cmd_out_future_t future;
 } zerv_cmd_inst_t;
 
 typedef struct {
@@ -147,11 +135,6 @@ zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_i
 					       size_t client_req_params_len,
 					       const void *client_req_params,
 					       zerv_cmd_out_base_t *resp, size_t resp_len);
-
-zerv_rc_t zerv_internal_get_future_resp(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
-					void *resp, k_timeout_t timeout);
-
-void _zerv_future_signal_response(zerv_cmd_inst_t *req_instance, zerv_rc_t rc);
 
 void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice);
 
