@@ -7,11 +7,6 @@
  *              |_____/ \__, |___/\__\___|_| |_| |_|_|  \__,_|_.__/|_|  |_|_|\_\___|_| |_|
  *                       __/ |
  *                      |___/
- * Description:
- *  This file contains part of the public API of the zerv library. The zerv library is a library for
- *  easing the development of event driven applications on Zephyr. The library helps the developer
- *  to create a modular application, following the principles of the micro service architecture. The
- *  library provides a way to create services that can be requested by other modules in the system.
  *
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) 2023 Systemfabriken AB
@@ -119,9 +114,7 @@
  * @param[out] p_ret The identifier of the pointer to the response storage, will be
  * NULL if no response is expected. The pointer is defined by the macro.
  * @param[in] params... The arguments to the command. The arguments should follow the
- * format specified by the ZERV_CMD_PARAM macro. The last argument should be the code block to
- * execute when the response is received. The code block should be surrounded by curly
- * brackets.
+ * format specified by the ZERV_IN macro used when declaring the command.
  */
 #define ZERV_CALL(zervice, cmd, retcode, p_ret, params...)                                         \
 	cmd##_ret_t __##cmd##_response;                                                            \
