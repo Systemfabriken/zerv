@@ -25,7 +25,6 @@
  *===============================================================================================*/
 #include <zephyr/zerv/zerv_internal.h>
 
-
 /*=================================================================================================
  * ZERV COMMAND MACROS
  *===============================================================================================*/
@@ -37,7 +36,7 @@
  *
  * @param ... The types and names of the input parameters.
  */
-#define ZERV_IN(...) FOR_EACH (__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+#define ZERV_IN(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
 /**
  * @brief Macro for declaring an empty zervice command input parameter.
@@ -51,7 +50,7 @@
  *
  * @param ... The types and names of the output parameters.
  */
-#define ZERV_OUT(...) FOR_EACH (__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
+#define ZERV_OUT(...) FOR_EACH(__ZERV_IMPL_STRUCT_MEMBER, (), ##__VA_ARGS__)
 
 /**
  * @brief Macro for declaring an empty zervice command output parameter.
@@ -73,16 +72,16 @@
  * @note The command must be defined in the source file with the ZERV_CMD_HANDLER_DEF macro.
  */
 #define ZERV_CMD_DECL(name, in, out)                                                               \
-    typedef struct name##_param {                                                                  \
-        in                                                                                         \
-    } name##_param_t;                                                                              \
-    typedef void (*name##_resp_handler_t)(void);                                                   \
-    typedef struct name##_ret {                                                                    \
-        zerv_rc_t rc;                                                                              \
-        name##_resp_handler_t on_delayed_response;                                                 \
-        out                                                                                        \
-    } name##_ret_t;                                                                                \
-    extern zerv_cmd_inst_t __##name
+	typedef struct name##_param {                                                              \
+		in                                                                                 \
+	} name##_param_t;                                                                          \
+	typedef void (*name##_resp_handler_t)(void);                                               \
+	typedef struct name##_ret {                                                                \
+		zerv_rc_t rc;                                                                      \
+		name##_resp_handler_t on_delayed_response;                                         \
+		out                                                                                \
+	} name##_ret_t;                                                                            \
+	extern zerv_cmd_inst_t __##name
 
 /**
  * @brief Macro for defining a zervice request handler function in a source file.
@@ -94,9 +93,9 @@
  * ZERV_OUT macro used when declaring the command.
  */
 #define ZERV_CMD_HANDLER_DEF(cmd_name, in, out)                                                    \
-    static K_SEM_DEFINE(__##cmd_name##_future_sem, 0, 1);                                          \
-    static cmd_name##_ret_t __##cmd_name##_future_response;                                        \
-    zerv_cmd_inst_t __##cmd_name __aligned(4) = {                                              \
+	static K_SEM_DEFINE(__##cmd_name##_future_sem, 0, 1);                                      \
+	static cmd_name##_ret_t __##cmd_name##_future_response;                                    \
+	zerv_cmd_inst_t __##cmd_name __aligned(4) = {                                              \
 		.name = #cmd_name,                                                                 \
 		.id = __##cmd_name##_id,                                                           \
 		.is_locked = ATOMIC_INIT(false),                                                   \
@@ -109,8 +108,8 @@
 				.resp_len = sizeof(cmd_name##_ret_t),                              \
 				.resp = (zerv_cmd_out_base_t *)&__##cmd_name##_future_response,    \
 			},                                                                         \
-	};   \
-    zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *in, cmd_name##_ret_t *out)
+	};                                                                                         \
+	zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *in, cmd_name##_ret_t *out)
 
 /*=================================================================================================
  * ZERVICE CMD CLIENT MACROS
@@ -134,11 +133,11 @@
  * execute when the response is received. The code block should be surrounded by curly
  * brackets.
  */
-#define ZERV_CMD_CALL(zervice, cmd, retcode, p_ret, params...)                                         \
-    cmd##_ret_t __##cmd##_response;                                                                \
-    cmd##_ret_t *p_ret = &__##cmd##_response;                                                      \
-    zerv_rc_t retcode = zerv_internal_client_request_handler(                                      \
-            &zervice, &__##cmd, sizeof(cmd##_param_t), &(cmd##_param_t){ params },                 \
-            (zerv_cmd_out_base_t *)p_ret, sizeof(cmd##_ret_t));
+#define ZERV_CALL(zervice, cmd, retcode, p_ret, params...)                                         \
+	cmd##_ret_t __##cmd##_response;                                                            \
+	cmd##_ret_t *p_ret = &__##cmd##_response;                                                  \
+	zerv_rc_t retcode = zerv_internal_client_request_handler(                                  \
+		&zervice, &__##cmd, sizeof(cmd##_param_t), &(cmd##_param_t){params},               \
+		(zerv_cmd_out_base_t *)p_ret, sizeof(cmd##_ret_t));
 
 #endif // _ZERV_CMD_H_

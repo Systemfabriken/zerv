@@ -292,7 +292,7 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  *
  * @example
  *   future_echo_ret_t future_echo_resp = { 0 };
- *   zerv_rc_t rc = ZERV_CMD_CALL(future_service, future_echo,
+ *   zerv_rc_t rc = ZERV_CALL(future_service, future_echo,
  *                                 (&(future_echo_param_t){ .is_delayed = false, .str = "Hello
  * World!" }), &future_echo_resp);
  *
@@ -301,10 +301,6 @@ zerv_rc_t zerv_future_init(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
  * later. If the response is not delayed the response will be received immediately and the call will
  * return the result of the request handler function.
  */
-#define ZERV_CMD_CALL(zervice, cmd_name, p_req_params, p_response_dst)                             \
-	zerv_internal_client_request_handler(&zervice, &__##cmd_name, sizeof(cmd_name##_param_t),  \
-					     p_req_params, (zerv_cmd_out_base_t *)p_response_dst,  \
-					     sizeof(cmd_name##_ret_t));
 
 /**
  * @brief Get the future response of a request.
