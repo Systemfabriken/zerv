@@ -10,7 +10,7 @@ participant client_thread as client
 
 
 box "zerv framework implementation" #LightGray
-    participant zerv_api as zerv_api
+    participant zerv_cmd_api as zerv_cmd_api
     queue zerv_queue as zerv_queue
     participant zerv_thread as zerv_thread
     participant zerv_req_handler as zerv_req_handler
@@ -19,12 +19,12 @@ end box
 
 participant scheduler as sched
 
-== Zit thread ==
+== Zerv thread ==
 
 ' Initialisation
 activate zerv_thread
 zerv_thread -> zerv_queue ++: k_fifo_get
-zerv_queue --> sched --++: wait for zerv_req (blocking zit thread)
+zerv_queue --> sched --++: wait for service request (blocking zerv thread)
 deactivate zerv_thread
 
 == Client thread ==
@@ -32,32 +32,32 @@ deactivate zerv_thread
 sched -> client --++: schedule
 
 ' Client request call
-client -> zerv_api ++: zerv.req1: param, *resp 
-zerv_api -> zerv_api: lock req1 mutex
-zerv_api ->o zerv_queue: k_fifo_put: zerv_req*
-zerv_api --> sched --++: k_sem_take: response_sem (client thread blocked)
+client -> zerv_cmd_api ++: request: cmd params
+zerv_cmd_api -> zerv_cmd_api: lock cmd
+zerv_cmd_api ->o zerv_queue: k_fifo_put: params
+zerv_cmd_api --> sched --++: k_sem_take: response_sem (client thread blocked)
 deactivate client
 
-== Zit thread ==
+== Zerv thread ==
 
 ' zerv request handling
 sched -> zerv_queue --++: schedule
 activate zerv_thread
-zerv_queue --> zerv_thread --: zerv_req*
-zerv_thread -> zerv_req_handler ++: zerv_req*
-zerv_req_handler -> req1_handler --++: handle_request: param, *resp
-rnote over req1_handler: do non-blocking work\nand update *resp
+zerv_queue --> zerv_thread --: cmd params
+zerv_thread -> zerv_req_handler ++: cmd params
+zerv_req_handler -> req1_handler --++: handle service request
+rnote over req1_handler: do non-blocking work\nand update return parameters
 req1_handler --> zerv_req_handler --++: return code
-zerv_req_handler --> sched --++: k_sem_give: response_sem (blocking zit thread)
+zerv_req_handler --> sched --++: k_sem_give: response_sem (blocking zerv thread)
 deactivate zerv_thread
 
 == Client thread ==
 
 ' Client response handling
-sched -> zerv_api --++: schedule
+sched -> zerv_cmd_api --++: schedule
 activate client
-zerv_api -> zerv_api: unlock req1 mutex
-zerv_api --> client --: return code
-rnote over client: Data in *resp\nis now available
+zerv_cmd_api -> zerv_cmd_api: unlock cmd
+zerv_cmd_api --> client --: return code
+rnote over client: Data in response pointer\nstruct is now available
 
 @enduml

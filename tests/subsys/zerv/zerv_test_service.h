@@ -1,18 +1,10 @@
-// #####################################################################################################################
-// # # #                              Copyright (C) 2023 DevPort Ost AB, all rights reserved. # #
-// Unauthorized copying of this file, via any medium is strictly prohibited.                     #
-// #                                           Proprietary and confidential. # # # # author:  Albin
-// Hjalmas # # company: Systemfabriken # # contact: albin@systemfabriken.tech #
-// #####################################################################################################################
 #ifndef _ZIT_TEST_SERVICE_H_
 #define _ZIT_TEST_SERVICE_H_
 /*=================================================================================================
  * INCLUDES
  *===============================================================================================*/
-#include <zephyr/zerv/zerv.h> // Include the Zephyr Inter Thread Service (ZIT) header.
-
-// PUBLIC DECLARATIONS
-// ################################################################################################
+#include <zephyr/zerv/zerv.h>
+#include <zephyr/zerv/zerv_cmd.h>
 
 // Define a requests of the service that will retrieve the string "Hello World!" and respond with
 // the integers a and b.
