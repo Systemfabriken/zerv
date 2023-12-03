@@ -32,8 +32,8 @@ LOG_MODULE_REGISTER(zerv, CONFIG_ZERV_LOG_LEVEL);
 
 zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
 					       size_t client_req_params_len,
-					       const void *client_req_params,
-					       zerv_cmd_out_base_t *resp, size_t resp_len)
+					       const void *client_req_params, void *resp,
+					       size_t resp_len)
 {
 	if (serv == NULL || req_instance == NULL || client_req_params == NULL || resp == NULL) {
 		return ZERV_RC_NULLPTR;
@@ -90,9 +90,10 @@ zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_i
 	}
 
 	LOG_DBG("Received response from %s: %s", serv->name, req_instance->name);
+	rc = p_req_params->rc;
 	k_heap_free(serv->heap, p_req_params);
 	atomic_set(&req_instance->is_locked, false);
-	return resp->rc;
+	return rc;
 }
 
 /*=================================================================================================
@@ -126,7 +127,7 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_cmd_in_t *req_params)
 	if (rc < ZERV_RC_OK) {
 		LOG_ERR("Failed to handle request on %s", serv->name);
 	}
-	req_params->resp->rc = rc;
+	req_params->rc = rc;
 	k_sem_give(req_params->response_sem);
 	return rc;
 }

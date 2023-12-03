@@ -59,12 +59,6 @@ static inline const char *zerv_rc_to_str(zerv_rc_t rc)
 }
 
 typedef zerv_rc_t (*zerv_cmd_abstract_handler_t)(const void *req, void *resp);
-typedef void (*zerv_abstract_resp_handler_t)(void);
-
-typedef struct {
-	zerv_rc_t rc;
-	zerv_abstract_resp_handler_t handler;
-} zerv_cmd_out_base_t;
 
 /**
  * @brief Used internally to store the parameters to a service request on the service's heap.
@@ -79,7 +73,8 @@ typedef struct {
 	int id;
 	struct k_sem *response_sem;
 	size_t resp_len;
-	zerv_cmd_out_base_t *resp;
+	void *resp;
+	int rc; // Return code from the service request handler.
 	zerv_cmd_in_bytes_t client_req_params;
 } zerv_cmd_in_t;
 
@@ -132,8 +127,8 @@ typedef struct {
  */
 zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_inst_t *req_instance,
 					       size_t client_req_params_len,
-					       const void *client_req_params,
-					       zerv_cmd_out_base_t *resp, size_t resp_len);
+					       const void *client_req_params, void *resp,
+					       size_t resp_len);
 
 void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice);
 
