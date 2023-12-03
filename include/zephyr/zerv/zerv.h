@@ -1,12 +1,11 @@
 /*=================================================================================================
- *                _____           _                 ______    _          _ _
- *               / ____|         | |               |  ____|  | |        (_) |
- *              | (___  _   _ ___| |_ ___ _ __ ___ | |__ __ _| |__  _ __ _| | _____ _ __
- *               \___ \| | | / __| __/ _ \ '_ ` _ \|  __/ _` | '_ \| '__| | |/ / _ \ '_ \
- *               ____) | |_| \__ \ ||  __/ | | | | | | | (_| | |_) | |  | |   <  __/ | | |
- *              |_____/ \__, |___/\__\___|_| |_| |_|_|  \__,_|_.__/|_|  |_|_|\_\___|_| |_|
- *                       __/ |
- *                      |___/
+ *
+ *           ██████╗ ██╗████████╗███╗   ███╗ █████╗ ███╗   ██╗     █████╗ ██████╗
+ *           ██╔══██╗██║╚══██╔══╝████╗ ████║██╔══██╗████╗  ██║    ██╔══██╗██╔══██╗
+ *           ██████╔╝██║   ██║   ██╔████╔██║███████║██╔██╗ ██║    ███████║██████╔╝
+ *           ██╔══██╗██║   ██║   ██║╚██╔╝██║██╔══██║██║╚██╗██║    ██╔══██║██╔══██╗
+ *           ██████╔╝██║   ██║   ██║ ╚═╝ ██║██║  ██║██║ ╚████║    ██║  ██║██████╔╝
+ *           ╚═════╝ ╚═╝   ╚═╝   ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝    ╚═╝  ╚═╝╚═════╝
  * Description:
  *  This file contains the public API of the zerv library. The zerv library is a library for
  *  easing the development of event driven applications on Zephyr. The library helps the developer
@@ -14,8 +13,8 @@
  *  library provides a way to create services that can be requested by other modules in the system.
  *
  * SPDX-License-Identifier: Apache-2.0
- * Copyright (c) 2023 Systemfabriken AB
- * contact: albin@systemfabriken.tech
+ * Copyright (c) 2023 BitMan AB
+ * contact: albin@bitman.se
  *===============================================================================================*/
 #ifndef _ZERV_H_
 #define _ZERV_H_

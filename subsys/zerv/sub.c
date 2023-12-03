@@ -1,11 +1,16 @@
-// #####################################################################################################################
-// # # #                              Copyright (C) 2023 DevPort Ost AB, all rights reserved. # #
-// Unauthorized copying of this file, via any medium is strictly prohibited.                     #
-// #                                           Proprietary and confidential. # # # # author:  Albin
-// Hjalmas # # company: Systemfabriken # # contact: albin@systemfabriken.tech #
-// #####################################################################################################################
-//  INCLUDES
-//  ###########################################################################################################
+/*=================================================================================================
+ *
+ *           ██████╗ ██╗████████╗███╗   ███╗ █████╗ ███╗   ██╗     █████╗ ██████╗
+ *           ██╔══██╗██║╚══██╔══╝████╗ ████║██╔══██╗████╗  ██║    ██╔══██╗██╔══██╗
+ *           ██████╔╝██║   ██║   ██╔████╔██║███████║██╔██╗ ██║    ███████║██████╔╝
+ *           ██╔══██╗██║   ██║   ██║╚██╔╝██║██╔══██║██║╚██╗██║    ██╔══██║██╔══██╗
+ *           ██████╔╝██║   ██║   ██║ ╚═╝ ██║██║  ██║██║ ╚████║    ██║  ██║██████╔╝
+ *           ╚═════╝ ╚═╝   ╚═╝   ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝    ╚═╝  ╚═╝╚═════╝
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2023 BitMan AB
+ * contact: albin@bitman.se
+ *===============================================================================================*/
 #include "sub.h"
 #include "pub.h"
 #include <zephyr/kernel.h>
@@ -13,18 +18,12 @@
 
 LOG_MODULE_REGISTER(sub, CONFIG_ZERV_LOG_LEVEL);
 
-// PRIVATE DECLARATIONS
-// ###############################################################################################
-
 /**
  * @brief Free a notification from a publisher.
  * @param[in] _sub The subscriber to receive the notification.
  * @param[in] _buf The buffer to free.
  */
 static void sub_free_internal(struct sub *_sub);
-
-// PUBLIC FUNCTION DEFINITIONS
-// ########################################################################################
 
 /**
  * @brief Send a notification to a subscriber.
@@ -156,9 +155,6 @@ void sub_free(struct sub *sub, void *buf)
 
 	k_mutex_unlock(sub->mtx);
 }
-
-// PRIVATE FUNCTION DEFINITIONS
-// #######################################################################################
 
 void sub_free_internal(struct sub *_sub)
 {

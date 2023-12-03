@@ -42,7 +42,7 @@ Zerv is released under [Apache 2.0 License](LICENSE), which provides details on 
 
 ## Support
 
-For support, questions, or more information, please visit our [issues page](https://github.com/Systemfabriken/zerv/issues) or contact us at [albin@systemfabriken.tech](albin@systemfabriken.tech).
+For support, questions, or more information, please visit our [issues page](https://github.com/Systemfabriken/zerv/issues) or contact us at [albin@bitman.se](albin@bitman.se).
 
 ## Acknowledgments
 
