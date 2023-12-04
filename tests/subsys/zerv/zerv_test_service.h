@@ -1,8 +1,6 @@
-#ifndef _ZIT_TEST_SERVICE_H_
-#define _ZIT_TEST_SERVICE_H_
-/*=================================================================================================
- * INCLUDES
- *===============================================================================================*/
+#ifndef _ZERV_TEST_SERVICE_H_
+#define _ZERV_TEST_SERVICE_H_
+
 #include <zephyr/zerv/zerv.h>
 #include <zephyr/zerv/zerv_cmd.h>
 
@@ -23,6 +21,7 @@ ZERV_CMD_DECL(read_hello_world, ZERV_IN_EMPTY, ZERV_OUT(char str[30]));
 ZERV_CMD_DECL(print_hello_world, ZERV_IN_EMPTY, ZERV_OUT_EMPTY);
 
 // Declare the service.
-ZERV_DECL(zerv_test_service, get_hello_world, echo, fail, read_hello_world, print_hello_world);
+ZERV_DECL(zerv_test_service,
+	  ZERV_CMDS(get_hello_world, echo, fail, read_hello_world, print_hello_world), EMPTY);
 
-#endif // _ZIT_TEST_SERVICE_H_
+#endif // _ZERV_TEST_SERVICE_H_

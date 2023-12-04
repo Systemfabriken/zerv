@@ -54,8 +54,8 @@ zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_i
 
 	// Allocate the request on the service's heap and copy the request data. The request
 	// is then put in the service's fifo.
-	zerv_cmd_in_t *p_req_params =
-		k_heap_alloc(serv->heap, client_req_params_len + sizeof(zerv_cmd_in_t), K_NO_WAIT);
+	zerv_request_t *p_req_params =
+		k_heap_alloc(serv->heap, client_req_params_len + sizeof(zerv_request_t), K_NO_WAIT);
 	if (p_req_params == NULL) {
 		LOG_DBG("Failed to allocate request params to %s: %s", serv->name,
 			req_instance->name);
@@ -96,11 +96,51 @@ zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_i
 	return rc;
 }
 
+zerv_rc_t zerv_internal_client_message_handler(const zervice_t *serv, zerv_msg_inst_t *msg_instance,
+					       size_t msg_params_len, const void *msg_params)
+{
+	if (serv == NULL || msg_instance == NULL || msg_params == NULL) {
+		return ZERV_RC_NULLPTR;
+	}
+
+	// Prevent other threads from passing messages to this service while we are using it.
+	// Critical section is used when "locking" the service request as we dont want to
+	// be interrupted by the scheduler while doing this.
+	k_sched_lock();
+	if (atomic_get(&msg_instance->is_locked)) {
+		k_sched_unlock();
+		return ZERV_RC_LOCKED;
+	}
+	atomic_set(&msg_instance->is_locked, true);
+	k_sched_unlock();
+
+	LOG_DBG("Sending message %s: %s", serv->name, msg_instance->name);
+
+	// Allocate the message parameters on the service's heap. The
+	// message parameters is then put in the service's fifo.
+	zerv_request_t *p_req_params =
+		k_heap_alloc(serv->heap, msg_params_len + sizeof(zerv_request_t), K_NO_WAIT);
+	if (p_req_params == NULL) {
+		LOG_DBG("Failed to allocate request params to %s: %s", serv->name,
+			msg_instance->name);
+		atomic_set(&msg_instance->is_locked, false);
+		return ZERV_RC_NOMEM;
+	}
+	p_req_params->id = msg_instance->id;
+	p_req_params->client_req_params.data_len = msg_params_len;
+	memcpy(p_req_params->client_req_params.data, msg_params, msg_params_len);
+	k_fifo_put(serv->fifo, p_req_params);
+
+	LOG_DBG("Sent message to %s: %s", serv->name, msg_instance->name);
+	atomic_set(&msg_instance->is_locked, false);
+	return ZERV_RC_OK;
+}
+
 /*=================================================================================================
  * PUBLIC FUNCTION DEFINITIONS
  ================================================================================================*/
 
-zerv_cmd_in_t *zerv_get_cmd_input(const zervice_t *serv, k_timeout_t timeout)
+zerv_request_t *zerv_get_pending_request(const zervice_t *serv, k_timeout_t timeout)
 {
 	if (serv == NULL) {
 		return NULL;
@@ -109,42 +149,39 @@ zerv_cmd_in_t *zerv_get_cmd_input(const zervice_t *serv, k_timeout_t timeout)
 	return k_fifo_get(serv->fifo, timeout);
 }
 
-zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_cmd_in_t *req_params)
+zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 {
-	if (serv == NULL || req_params == NULL) {
+	if (serv == NULL || request == NULL) {
 		return ZERV_RC_NULLPTR;
-	}
-
-	if (req_params->id >= serv->cmd_instance_cnt || req_params->response_sem == NULL ||
-	    req_params->client_req_params.data_len == 0) {
-		return ZERV_RC_ERROR;
 	}
 
 	LOG_DBG("Handling on %s", serv->name);
-	zerv_rc_t rc = serv->cmd_instances[req_params->id]->handler(
-		req_params->client_req_params.data, req_params->resp);
 
-	if (rc < ZERV_RC_OK) {
-		LOG_ERR("Failed to handle request on %s", serv->name);
+	if (request->id < ZERV_CMD_ID_OFFSET && request->id > ZERV_MSG_ID_OFFSET) {
+		if (request->id >= serv->cmd_instance_cnt + ZERV_CMD_ID_OFFSET ||
+		    request->client_req_params.data_len == 0) {
+			return ZERV_RC_ERROR;
+		}
+		serv->msg_instances[request->id - ZERV_MSG_ID_OFFSET - 1]->handler(
+			request->client_req_params.data);
+		return 0;
+	} else if (request->id > ZERV_CMD_ID_OFFSET) {
+		if (request->id >= serv->cmd_instance_cnt + ZERV_CMD_ID_OFFSET ||
+		    request->response_sem == NULL || request->client_req_params.data_len == 0) {
+			return ZERV_RC_ERROR;
+		}
+
+		zerv_rc_t rc = serv->cmd_instances[request->id - ZERV_CMD_ID_OFFSET - 1]->handler(
+			request->client_req_params.data, request->resp);
+		if (rc < ZERV_RC_OK) {
+			LOG_ERR("Failed to handle request on %s", serv->name);
+		}
+		request->rc = rc;
+		k_sem_give(request->response_sem);
+		return rc;
 	}
-	req_params->rc = rc;
-	k_sem_give(req_params->response_sem);
-	return rc;
-}
 
-zerv_rc_t zerv_get_cmd_input_instance(const zervice_t *serv, int req_id,
-				      zerv_cmd_inst_t **req_instance)
-{
-	if (serv == NULL || req_instance == NULL) {
-		return ZERV_RC_NULLPTR;
-	}
-
-	if (req_id >= serv->cmd_instance_cnt) {
-		return ZERV_RC_ERROR;
-	}
-
-	*req_instance = serv->cmd_instances[req_id];
-	return ZERV_RC_OK;
+	return ZERV_RC_ERROR;
 }
 
 void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)
@@ -157,7 +194,7 @@ void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)
 	LOG_DBG("Starting command processor for %s", p_zervice->name);
 
 	while (true) {
-		zerv_cmd_in_t *p_req_params = k_fifo_get(p_zervice->fifo, K_FOREVER);
+		zerv_request_t *p_req_params = k_fifo_get(p_zervice->fifo, K_FOREVER);
 		if (p_req_params == NULL) {
 			LOG_ERR("Failed to get request params from %s", p_zervice->name);
 			continue;
@@ -210,7 +247,7 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 		if (events[0].state == K_POLL_TYPE_FIFO_DATA_AVAILABLE) {
 			events[0].state = K_POLL_STATE_NOT_READY;
 			LOG_DBG("Received request on %s", p_zervice->name);
-			zerv_cmd_in_t *p_req_params = k_fifo_get(p_zervice->fifo, K_NO_WAIT);
+			zerv_request_t *p_req_params = k_fifo_get(p_zervice->fifo, K_NO_WAIT);
 			if (p_req_params == NULL) {
 				LOG_ERR("Failed to get request params from %s", p_zervice->name);
 				continue;

@@ -3,8 +3,10 @@
 #include "sub.h"
 #include "zerv_test_service.h"
 #include "zerv_test_service_poll.h"
-#include <zephyr/zerv/zerv.h>
+#include "zerv_msg_test_service.h"
 
+#include <zephyr/zerv/zerv.h>
+#include <zephyr/zerv/zerv_msg.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -474,4 +476,31 @@ ZTEST(zerv, event_processor_thread)
 	int rc = k_sem_take(&event_sem_response, K_SECONDS(1));
 	zassert_equal(rc, 0, NULL);
 	PRINTLN("OK");
+}
+
+ZTEST(zerv, test_msg)
+{
+	PRINTLN("Sending print_msg request");
+	{
+		ZERV_MSG(zerv_msg_test_service, print_msg, rc, "Hello World!");
+		zassert_equal(rc, 0, NULL);
+		PRINTLN("OK");
+	}
+	k_sleep(K_MSEC(100));
+
+	PRINTLN("Sending cmp_msg_1 request");
+	{
+		ZERV_MSG(zerv_msg_test_service, cmp_msg_1, rc, 10, 20, 'a', "Hello World!");
+		zassert_equal(rc, 0, NULL);
+		PRINTLN("OK");
+	}
+	k_sleep(K_MSEC(100));
+
+	PRINTLN("Sending cmp_msg_2 request");
+	{
+		ZERV_MSG(zerv_msg_test_service, cmp_msg_2, rc, 10, 20, 'a', "Hello World!");
+		zassert_equal(rc, 0, NULL);
+		PRINTLN("OK");
+	}
+	k_sleep(K_MSEC(100));
 }

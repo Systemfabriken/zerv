@@ -18,7 +18,7 @@ ZERV_EVENT_PROCESSOR_THREAD_DEF(zerv_poll_service_2, 128, 256, 0, zerv_poll_serv
 
 ZERV_EVENT_HANDLER_DEF(zerv_poll_service_1_event)
 {
-	zerv_cmd_in_t *p_req = zerv_get_cmd_input(&zerv_poll_service_1, K_NO_WAIT);
+	zerv_request_t *p_req = zerv_get_pending_request(&zerv_poll_service_1, K_NO_WAIT);
 	if (p_req == NULL) {
 		LOG_ERR("Failed to get request");
 		return;
