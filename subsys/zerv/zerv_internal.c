@@ -208,7 +208,8 @@ void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)
 	}
 }
 
-void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events)
+void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events,
+					int (*on_init_cb)(void))
 {
 	if (p_zervice == NULL || zervice_events == NULL) {
 		return;
@@ -234,6 +235,14 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 			k_poll_signal_reset(events[i].signal);
 		}
 		events[i].state = K_POLL_STATE_NOT_READY;
+	}
+
+	if (on_init_cb) {
+		int rc = on_init_cb();
+		if (rc != 0) {
+			LOG_ERR("Failed to initialize %s", p_zervice->name);
+			return;
+		}
 	}
 
 	while (true) {

@@ -4,6 +4,7 @@
 #include "zerv_test_service.h"
 #include "zerv_test_service_poll.h"
 #include "zerv_msg_test_service.h"
+#include "zerv_test_periodic_thread.h"
 
 #include <zephyr/zerv/zerv.h>
 #include <zephyr/zerv/zerv_msg.h>
@@ -507,6 +508,31 @@ ZTEST(zerv, test_msg)
 		ZERV_MSG(zerv_msg_test_service, cmp_msg_2, rc, 10, 20, 'a', "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		k_sem_take(&cmp_msg_2_sem, K_FOREVER);
+		PRINTLN("OK");
+	}
+}
+
+ZTEST(zerv, test_periodic_thread)
+{
+	k_sem_give(&init_start_sem);
+	int ret = k_sem_take(&init_finished_sem, K_MSEC(100));
+	zassert_equal(ret, 0, NULL);
+
+	PRINTLN("Sending sync_timeout request");
+	{
+		ZERV_CALL(periodic_service, sync_timeout, rc, p_ret, 10);
+		zassert_equal(rc, 0, NULL);
+		ret = k_sem_take(&async_sem, K_MSEC(1100));
+		zassert_equal(ret, 0, NULL);
+		PRINTLN("OK");
+	}
+
+	PRINTLN("Sending async_timeout request");
+	{
+		ZERV_MSG(periodic_service, async_timeout, rc, 10);
+		zassert_equal(rc, 0, NULL);
+		ret = k_sem_take(&async_sem, K_MSEC(1100));
+		zassert_equal(ret, 0, NULL);
 		PRINTLN("OK");
 	}
 }
