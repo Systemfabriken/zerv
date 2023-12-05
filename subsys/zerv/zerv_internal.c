@@ -162,8 +162,14 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 		    request->client_req_params.data_len == 0) {
 			return ZERV_RC_ERROR;
 		}
-		serv->msg_instances[request->id - ZERV_MSG_ID_OFFSET - 1]->handler(
-			request->client_req_params.data);
+		zerv_msg_inst_t *msg_inst =
+			serv->msg_instances[request->id - ZERV_MSG_ID_OFFSET - 1];
+		if (msg_inst->is_raw) {
+			msg_inst->raw_handler(request->client_req_params.data_len,
+					      request->client_req_params.data);
+		} else {
+			msg_inst->handler(request->client_req_params.data);
+		}
 		return 0;
 	} else if (request->id > ZERV_CMD_ID_OFFSET) {
 		if (request->id >= serv->cmd_instance_cnt + ZERV_CMD_ID_OFFSET ||

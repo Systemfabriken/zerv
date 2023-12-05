@@ -60,6 +60,7 @@ static inline const char *zerv_rc_to_str(zerv_rc_t rc)
 
 typedef zerv_rc_t (*zerv_cmd_abstract_handler_t)(const void *req, void *resp);
 typedef void (*zerv_msg_abstract_handler_t)(const void *params);
+typedef void (*zerv_raw_msg_abstract_handler_t)(size_t size, const void *data);
 
 /**
  * @brief Used internally to store the parameters to a service request on the service's heap.
@@ -99,6 +100,8 @@ typedef struct {
 	int id;
 	atomic_t is_locked;
 	zerv_msg_abstract_handler_t handler;
+	bool is_raw;
+	zerv_raw_msg_abstract_handler_t raw_handler;
 } zerv_msg_inst_t;
 
 typedef struct {
@@ -169,13 +172,6 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
  *===============================================================================================*/
 
 #define __ZERV_IMPL_STRUCT_MEMBER(field) field;
-
-#define __ZERV_CMD_HANDLER_FN_DECL(cmd_name)                                                       \
-	__unused extern zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *req,            \
-							 cmd_name##_ret_t *resp);
-
-#define __ZERV_MSG_HANDLER_FN_DECL(msg_name)                                                       \
-	__unused extern void __##msg_name##_handler(const msg_name##_param_t *params);
 
 #define __ZERV_HANDLER_FN_IDENTIFIER(cmd_name) (zerv_cmd_abstract_handler_t) __##cmd_name##_handler
 

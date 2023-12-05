@@ -33,8 +33,7 @@
 #define ZERV_MSGS(messages...) messages
 
 #define ZERV_MSG_LIST(name, messages...)                                                           \
-	FOR_EACH_NONEMPTY_TERM(__ZERV_MSG_HANDLER_FN_DECL, (;), messages)                          \
-		__ZERV_DEFINE_MSG_INSTANCE_LIST(name, messages)                                    \
+	__ZERV_DEFINE_MSG_INSTANCE_LIST(name, messages)                                            \
 	enum __##name##_msgs_e                                                                     \
 	{                                                                                          \
 		__##name##_MSG_ID_OFFSET = ZERV_MSG_ID_OFFSET,                                     \
@@ -52,8 +51,7 @@
  * @param commands... The commands to be added to the zervice.
  */
 #define ZERV_CMD_LIST(name, commands...)                                                           \
-	FOR_EACH_NONEMPTY_TERM(__ZERV_CMD_HANDLER_FN_DECL, (;), commands)                          \
-		__ZERV_DEFINE_CMD_INSTANCE_LIST(name, commands)                                    \
+	__ZERV_DEFINE_CMD_INSTANCE_LIST(name, commands)                                            \
 	enum __##name##_cmds_e                                                                     \
 	{                                                                                          \
 		__##name##_CMD_ID_OFFSET = ZERV_CMD_ID_OFFSET,                                     \

@@ -84,6 +84,7 @@
  * ZERV_OUT macro used when declaring the command.
  */
 #define ZERV_CMD_HANDLER_DEF(cmd_name, in, out)                                                    \
+	zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *in, cmd_name##_ret_t *out);     \
 	static K_SEM_DEFINE(__##cmd_name##_future_sem, 0, 1);                                      \
 	zerv_cmd_inst_t __##cmd_name __aligned(4) = {                                              \
 		.name = #cmd_name,                                                                 \
