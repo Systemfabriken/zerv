@@ -484,23 +484,23 @@ ZTEST(zerv, test_msg)
 	{
 		ZERV_MSG(zerv_msg_test_service, print_msg, rc, "Hello World!");
 		zassert_equal(rc, 0, NULL);
+		k_sem_take(&print_msg_sem, K_FOREVER);
 		PRINTLN("OK");
 	}
-	k_sleep(K_MSEC(100));
 
 	PRINTLN("Sending cmp_msg_1 request");
 	{
 		ZERV_MSG(zerv_msg_test_service, cmp_msg_1, rc, 10, 20, 'a', "Hello World!");
 		zassert_equal(rc, 0, NULL);
+		k_sem_take(&cmp_msg_1_sem, K_FOREVER);
 		PRINTLN("OK");
 	}
-	k_sleep(K_MSEC(100));
 
 	PRINTLN("Sending cmp_msg_2 request");
 	{
 		ZERV_MSG(zerv_msg_test_service, cmp_msg_2, rc, 10, 20, 'a', "Hello World!");
 		zassert_equal(rc, 0, NULL);
+		k_sem_take(&cmp_msg_2_sem, K_FOREVER);
 		PRINTLN("OK");
 	}
-	k_sleep(K_MSEC(100));
 }
