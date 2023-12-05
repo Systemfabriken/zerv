@@ -421,6 +421,12 @@ ZTEST(zerv, hello_world)
 		ZERV_CALL(zerv_test_service, print_hello_world, rc, p_ret);
 		zassert_equal(rc, 0, NULL);
 	}
+
+	{
+		ZERV_MSG(zerv_test_service, test_msg, rc, "Hello World!", 10, 20);
+		zassert_equal(rc, 0, NULL);
+		k_sem_take(&test_msg_sem, K_FOREVER);
+	}
 }
 
 ZTEST(zerv, event_processor_thread)
