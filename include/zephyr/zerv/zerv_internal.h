@@ -161,7 +161,8 @@ zerv_rc_t zerv_internal_client_message_handler(const zervice_t *serv, zerv_msg_i
 
 void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice);
 
-void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events);
+void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events,
+					int (*on_init_cb)(void));
 
 /*=================================================================================================
  * PUBLIC MACROS

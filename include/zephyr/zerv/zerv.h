@@ -122,10 +122,12 @@
  * inputs and outputs while they are being processed.
  * @param stack_size The size of the stack of the zervice thread.
  * @param prio The priority of the zervice thread.
+ * @param on_init_cb The callback function that is called when the zervice thread is started.
  * @param zerv_events... The events of the zervice, provided as a list of event names. The events
  * must be declared before the zervice thread.
  */
-#define ZERV_EVENT_PROCESSOR_THREAD_DEF(zervice, heap_size, stack_size, prio, zerv_events...)      \
+#define ZERV_EVENT_PROCESSOR_THREAD_DEF(zervice, heap_size, stack_size, prio, on_init_cb,          \
+					zerv_events...)                                            \
 	ZERV_DEF(zervice, heap_size);                                                              \
 	static const struct k_poll_event __##zervice##_k_poll_event =                              \
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,                   \
@@ -140,7 +142,54 @@
 	};                                                                                         \
 	static K_THREAD_DEFINE(__##zervice##_thread, stack_size,                                   \
 			       (k_thread_entry_t)__zerv_event_processor_thread_body, &zervice,     \
-			       &__##zervice##_events_arg, NULL, prio, 0, 0)
+			       &__##zervice##_events_arg, on_init_cb, prio, 0, 0)
+
+/**
+ * @brief Macro for defining a zervice that is handled on a thread that processes requests and
+ * executes a low-jitter periodic callback.
+ *
+ * @param zervice The name of the zervice. This should be the same name as declared with the
+ * ZERV_DECL macro.
+ * @param heap_size The size of the heap of the zervice. The heap is used to store the request
+ * inputs and outputs while they are being processed.
+ * @param stack_size The size of the stack of the zervice thread.
+ * @param prio The priority of the zervice thread.
+ * @param period The period of the periodic callback.
+ * @param on_init_cb The callback function that is called when the zervice thread is started.
+ * @param periodic_cb The callback function that is called periodically.
+ *
+ * @note The periodic callback is called from the context of the zervice thread. The callback
+ * function should not block.
+ */
+#define ZERV_DEF_PERIODIC_THREAD(zervice, heap_size, stack_size, prio, period, on_init_cb,         \
+				 periodic_cb)                                                      \
+	static K_SEM_DEFINE(__##zervice##_sem, 0, 1);                                              \
+	static void __##zervice##_periodic_timer_expired(struct k_timer *dummy)                    \
+	{                                                                                          \
+		k_sem_give(&__##zervice##_sem);                                                    \
+	}                                                                                          \
+	static K_TIMER_DEFINE(__##zervice##_timer, __##zervice##_periodic_timer_expired, NULL);    \
+	ZERV_EVENT_DEF(__##zervice##_event, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,    \
+		       &__##zervice##_sem);                                                        \
+	ZERV_EVENT_HANDLER_DEF(__##zervice##_event, obj)                                           \
+	{                                                                                          \
+		struct k_sem *sem = (struct k_sem *)obj;                                           \
+		k_sem_take(sem, K_NO_WAIT);                                                        \
+		if (periodic_cb != NULL) {                                                         \
+			periodic_cb();                                                             \
+		}                                                                                  \
+	}                                                                                          \
+	static int __##zervice##_init(void)                                                        \
+	{                                                                                          \
+		int rc = 0;                                                                        \
+		if (on_init_cb != NULL) {                                                          \
+			rc = on_init_cb();                                                         \
+		}                                                                                  \
+		k_timer_start(&__##zervice##_timer, period, period);                               \
+		return rc;                                                                         \
+	}                                                                                          \
+	ZERV_EVENT_PROCESSOR_THREAD_DEF(zervice, heap_size, stack_size, prio, __##zervice##_init,  \
+					__##zervice##_event)
 
 /*=================================================================================================
  * ZERV EVENT MACROS
@@ -167,8 +216,9 @@
  * @brief Macro for defining a service event handler function.
  *
  * @param name The name of the event.
+ * @param obj The object of the event.
  */
-#define ZERV_EVENT_HANDLER_DEF(name) void __##name##_event_handler(void *obj)
+#define ZERV_EVENT_HANDLER_DEF(name, obj) void __##name##_event_handler(void *obj)
 
 /**
  * @brief Macro for initializing a k_poll_event struct for a zervice.
