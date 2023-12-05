@@ -1,10 +1,12 @@
-#ifndef _ZIT_TEST_SERVICE_H_
-#define _ZIT_TEST_SERVICE_H_
-/*=================================================================================================
- * INCLUDES
- *===============================================================================================*/
+#ifndef _ZERV_TEST_SERVICE_H_
+#define _ZERV_TEST_SERVICE_H_
+
+#include <zephyr/kernel.h>
 #include <zephyr/zerv/zerv.h>
 #include <zephyr/zerv/zerv_cmd.h>
+#include <zephyr/zerv/zerv_msg.h>
+
+extern struct k_sem test_msg_sem;
 
 // Define a requests of the service that will retrieve the string "Hello World!" and respond with
 // the integers a and b.
@@ -22,7 +24,11 @@ ZERV_CMD_DECL(read_hello_world, ZERV_IN_EMPTY, ZERV_OUT(char str[30]));
 // Define a request that will print the string "Hello World!".
 ZERV_CMD_DECL(print_hello_world, ZERV_IN_EMPTY, ZERV_OUT_EMPTY);
 
-// Declare the service.
-ZERV_DECL(zerv_test_service, get_hello_world, echo, fail, read_hello_world, print_hello_world);
+ZERV_MSG_DECL(test_msg, char str[30], int32_t a, int32_t b);
 
-#endif // _ZIT_TEST_SERVICE_H_
+// Declare the service.
+ZERV_DECL(zerv_test_service,
+	  ZERV_CMDS(get_hello_world, echo, fail, read_hello_world, print_hello_world),
+	  ZERV_MSGS(test_msg));
+
+#endif // _ZERV_TEST_SERVICE_H_

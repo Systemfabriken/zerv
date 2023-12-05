@@ -69,9 +69,7 @@
 	typedef struct name##_param {                                                              \
 		in                                                                                 \
 	} name##_param_t;                                                                          \
-	typedef void (*name##_resp_handler_t)(void);                                               \
 	typedef struct name##_ret {                                                                \
-		zerv_rc_t rc;                                                                      \
 		out                                                                                \
 	} name##_ret_t;                                                                            \
 	extern zerv_cmd_inst_t __##name

@@ -23,6 +23,7 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
 
 /*=================================================================================================
  * DECLARATIONS
@@ -58,6 +59,7 @@ static inline const char *zerv_rc_to_str(zerv_rc_t rc)
 }
 
 typedef zerv_rc_t (*zerv_cmd_abstract_handler_t)(const void *req, void *resp);
+typedef void (*zerv_msg_abstract_handler_t)(const void *params);
 
 /**
  * @brief Used internally to store the parameters to a service request on the service's heap.
@@ -75,7 +77,7 @@ typedef struct {
 	void *resp;
 	int rc; // Return code from the service request handler.
 	zerv_cmd_in_bytes_t client_req_params;
-} zerv_cmd_in_t;
+} zerv_request_t;
 
 /**
  * @brief The type of a zervice command.
@@ -88,6 +90,17 @@ typedef struct {
 	zerv_cmd_abstract_handler_t handler;
 } zerv_cmd_inst_t;
 
+/**
+ * @brief The type of a zervice message.
+ * @note This is used internally to represent a zervice message.
+ */
+typedef struct {
+	const char *name;
+	int id;
+	atomic_t is_locked;
+	zerv_msg_abstract_handler_t handler;
+} zerv_msg_inst_t;
+
 typedef struct {
 	const char *name;
 	struct k_heap *heap;
@@ -95,6 +108,8 @@ typedef struct {
 	struct k_mutex *mtx;
 	size_t cmd_instance_cnt;
 	zerv_cmd_inst_t **cmd_instances;
+	size_t msg_instance_cnt;
+	zerv_msg_inst_t **msg_instances;
 } zervice_t;
 
 /**
@@ -129,6 +144,21 @@ zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_i
 					       const void *client_req_params, void *resp,
 					       size_t resp_len);
 
+/**
+ * @brief DONT TOUCH, USED INTERNALLY to pass a message from the client thread to the service
+ * thread.
+ *
+ * @param[in] serv The service to call.
+ * @param[in] msg_instance The type of the message to call.
+ * @param[in] client_msg_params_len The length of the message.
+ * @param[in] client_msg_params The message parameters from the client.
+ *
+ * @return ZERV_RC return code from the service message handler function.
+ */
+zerv_rc_t zerv_internal_client_message_handler(const zervice_t *serv, zerv_msg_inst_t *msg_instance,
+					       size_t client_msg_params_len,
+					       const void *client_msg_params);
+
 void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice);
 
 void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events);
@@ -143,15 +173,24 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 	__unused extern zerv_rc_t __##cmd_name##_handler(const cmd_name##_param_t *req,            \
 							 cmd_name##_ret_t *resp);
 
+#define __ZERV_MSG_HANDLER_FN_DECL(msg_name)                                                       \
+	__unused extern void __##msg_name##_handler(const msg_name##_param_t *params);
+
 #define __ZERV_HANDLER_FN_IDENTIFIER(cmd_name) (zerv_cmd_abstract_handler_t) __##cmd_name##_handler
 
 #define __ZERV_CMD_ID_DECL(cmd_name) __##cmd_name##_id
+
+#define __ZERV_MSG_ID_DECL(msg_name) __##msg_name##_id
 
 #define __ZERV_CMD_INSTANCE_POINTER(cmd_name) &__##cmd_name
 
 #define __ZERV_DEFINE_CMD_INSTANCE_LIST(zervice, ...)                                              \
 	__unused static zerv_cmd_inst_t *zervice##_cmd_instances[] = {                             \
-		FOR_EACH(__ZERV_CMD_INSTANCE_POINTER, (, ), __VA_ARGS__)};
+		FOR_EACH_NONEMPTY_TERM(__ZERV_CMD_INSTANCE_POINTER, (, ), __VA_ARGS__)};
+
+#define __ZERV_DEFINE_MSG_INSTANCE_LIST(zervice, ...)                                              \
+	__unused static zerv_msg_inst_t *zervice##_msg_instances[] = {                             \
+		FOR_EACH_NONEMPTY_TERM(__ZERV_CMD_INSTANCE_POINTER, (, ), __VA_ARGS__)};
 
 #define __ZERV_GET_CMD_INPUT(cmd_name, zervice)                                                    \
 	static inline cmd_name##_param_t *zerv_get_##cmd_name##_params(void)                       \
