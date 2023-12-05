@@ -83,7 +83,8 @@ zerv_rc_t zerv_internal_client_request_handler(const zervice_t *serv, zerv_cmd_i
 	LOG_DBG("Waiting for response from %s: %s", serv->name, req_instance->name);
 	rc = k_sem_take(&response_sem, K_FOREVER);
 	if (rc != 0) {
-		LOG_ERR("Failed to wait for response from %s", serv->name);
+		LOG_ERR("%s:%i: Failed to wait for response from %s", __FILE__, __LINE__,
+			serv->name);
 		k_heap_free(serv->heap, p_req_params);
 		atomic_set(&req_instance->is_locked, false);
 		return ZERV_RC_TIMEOUT;
@@ -174,7 +175,8 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 		zerv_rc_t rc = serv->cmd_instances[request->id - ZERV_CMD_ID_OFFSET - 1]->handler(
 			request->client_req_params.data, request->resp);
 		if (rc < ZERV_RC_OK) {
-			LOG_ERR("Failed to handle request on %s", serv->name);
+			LOG_ERR("%s:%i: Failed to handle request on %s", __FILE__, __LINE__,
+				serv->name);
 		}
 		request->rc = rc;
 		k_sem_give(request->response_sem);
@@ -187,7 +189,7 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)
 {
 	if (p_zervice == NULL) {
-		LOG_ERR("Invalid arguments");
+		LOG_ERR("%s:%i: Invalid arguments", __FILE__, __LINE__);
 		return;
 	}
 
@@ -196,13 +198,15 @@ void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)
 	while (true) {
 		zerv_request_t *p_req_params = k_fifo_get(p_zervice->fifo, K_FOREVER);
 		if (p_req_params == NULL) {
-			LOG_ERR("Failed to get request params from %s", p_zervice->name);
+			LOG_ERR("%s:%i: Failed to get request params from %s", __FILE__, __LINE__,
+				p_zervice->name);
 			continue;
 		}
 
 		zerv_rc_t rc = zerv_handle_request(p_zervice, p_req_params);
 		if (rc != 0) {
-			LOG_ERR("Failed to handle request on %s", p_zervice->name);
+			LOG_ERR("%s:%i: Failed to handle request on %s", __FILE__, __LINE__,
+				p_zervice->name);
 			continue;
 		}
 	}
@@ -225,7 +229,8 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 	for (size_t i = 0; i < zervice_events->event_cnt; i++) {
 		if (events[i].type == K_POLL_TYPE_SIGNAL) {
 			if (!events[i].signal || events[i].signal != events[i].obj) {
-				LOG_ERR("Zerv k_poll_signal event is erronously initiated!");
+				LOG_ERR("%s:%i: Zerv k_poll_signal event is erronously initiated!",
+					__BASE_FILE__, __LINE__);
 				continue;
 			}
 			k_poll_signal_init(events[i].signal);
@@ -239,7 +244,8 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 	while (true) {
 		int rc = k_poll(events, zervice_events->event_cnt, K_FOREVER);
 		if (rc != 0) {
-			LOG_ERR("Failed to poll events for %s", p_zervice->name);
+			LOG_ERR("%s:%i: Failed to poll events for %s", __FILE__, __LINE__,
+				p_zervice->name);
 			continue;
 		}
 
@@ -249,13 +255,15 @@ void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_
 			LOG_DBG("Received request on %s", p_zervice->name);
 			zerv_request_t *p_req_params = k_fifo_get(p_zervice->fifo, K_NO_WAIT);
 			if (p_req_params == NULL) {
-				LOG_ERR("Failed to get request params from %s", p_zervice->name);
+				LOG_ERR("%s:%i: Failed to get request params from %s", __FILE__,
+					__LINE__, p_zervice->name);
 				continue;
 			}
 
 			zerv_rc_t rc = zerv_handle_request(p_zervice, p_req_params);
 			if (rc != 0) {
-				LOG_ERR("Failed to handle request on %s", p_zervice->name);
+				LOG_ERR("%s%i: Failed to handle request on %s", __FILE__, __LINE__,
+					p_zervice->name);
 				continue;
 			}
 		}
