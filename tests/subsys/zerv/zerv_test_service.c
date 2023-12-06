@@ -7,7 +7,7 @@ LOG_MODULE_REGISTER(zerv_test_service, LOG_LEVEL_DBG);
 
 K_SEM_DEFINE(test_msg_sem, 0, 1);
 
-ZERV_DEF_REQUEST_PROCESSOR_THREAD(zerv_test_service, 128, 256, K_PRIO_PREEMPT(10));
+ZERV_DEF_THREAD(zerv_test_service, 128, 256, K_PRIO_PREEMPT(10), NULL);
 
 ZERV_CMD_HANDLER_DEF(get_hello_world, req, resp)
 {

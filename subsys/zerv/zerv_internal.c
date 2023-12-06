@@ -190,32 +190,8 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 	return ZERV_RC_ERROR;
 }
 
-void __zerv_cmd_processor_thread_body(const zervice_t *p_zervice)
-{
-	if (p_zervice == NULL) {
-		LOG_ERR("Invalid arguments");
-		return;
-	}
-
-	LOG_DBG("Starting command processor for %s", p_zervice->name);
-
-	while (true) {
-		zerv_request_t *p_req_params = k_fifo_get(p_zervice->fifo, K_FOREVER);
-		if (p_req_params == NULL) {
-			LOG_ERR("Failed to get request params from %s", p_zervice->name);
-			continue;
-		}
-
-		zerv_rc_t rc = zerv_handle_request(p_zervice, p_req_params);
-		if (rc != 0) {
-			LOG_ERR("Failed to handle request on %s", p_zervice->name);
-			continue;
-		}
-	}
-}
-
-void __zerv_event_processor_thread_body(const zervice_t *p_zervice, zerv_events_t *zervice_events,
-					int (*on_init_cb)(void))
+void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
+		   int (*on_init_cb)(void))
 {
 	if (p_zervice == NULL || zervice_events == NULL) {
 		return;

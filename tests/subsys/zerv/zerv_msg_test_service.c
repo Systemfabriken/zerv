@@ -9,7 +9,7 @@ K_SEM_DEFINE(cmp_msg_2_sem, 0, 1);
 
 LOG_MODULE_REGISTER(zerv_msg_test_service, LOG_LEVEL_DBG);
 
-ZERV_DEF_REQUEST_PROCESSOR_THREAD(zerv_msg_test_service, 512, 2048, K_PRIO_PREEMPT(10));
+ZERV_DEF_THREAD(zerv_msg_test_service, 512, 2048, K_PRIO_PREEMPT(10), NULL);
 
 ZERV_MSG_HANDLER_DEF(print_msg, param)
 {
