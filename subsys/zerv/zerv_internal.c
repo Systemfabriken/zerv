@@ -20,6 +20,7 @@
 #include <zephyr/zerv/zerv_internal.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/slist.h>
 
 /*=================================================================================================
  * PRIVATE MACROS
@@ -142,7 +143,6 @@ zerv_rc_t zerv_internal_emit_topic(sys_slist_t *subscribers, size_t params_size,
 		return ZERV_RC_NULLPTR;
 	}
 
-	LOG_DBG("Emitting topic to %d subscribers", sys_slist_len(subscribers));
 	LOG_DBG("Topic subscriber list: %p", subscribers);
 
 	sys_snode_t *node = sys_slist_peek_head(subscribers);
@@ -256,7 +256,6 @@ void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
 		zerv_topic_subscriber_t *sub = p_zervice->topic_subscriber_instances[i];
 		LOG_DBG("Adding subscriber %s", sub->msg_instance->name);
 		sys_slist_append(topic_subscriber_list, &sub->node);
-		LOG_DBG("Subscribers: %d", sys_slist_len(topic_subscriber_list));
 	}
 
 	LOG_DBG("Starting event processor for %s, num events %d", p_zervice->name,
