@@ -7,7 +7,7 @@ LOG_MODULE_REGISTER(zerv_test_service, LOG_LEVEL_DBG);
 
 K_SEM_DEFINE(test_msg_sem, 0, 1);
 
-ZERV_DEF_THREAD(zerv_test_service, 128, 256, K_PRIO_PREEMPT(10), NULL);
+ZERV_DEF_THREAD(zerv_test_service, 256, 256, K_PRIO_PREEMPT(10), NULL);
 
 ZERV_CMD_HANDLER_DEF(get_hello_world, req, resp)
 {
@@ -48,4 +48,9 @@ ZERV_MSG_HANDLER_DEF(test_msg, msg)
 {
 	LOG_DBG("Received message: str: %s, a: %d, b: %d", msg->str, msg->a, msg->b);
 	k_sem_give(&test_msg_sem);
+}
+
+ZERV_TOPIC_HANDLER(zerv_test_service, test_topic, msg)
+{
+	LOG_DBG("Received test_topic: a=%d, b=%u, c=%c", msg->a, msg->b, msg->c);
 }

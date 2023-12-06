@@ -24,6 +24,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/slist.h>
 
 /*=================================================================================================
  * DECLARATIONS
@@ -104,6 +105,7 @@ typedef struct {
 	zerv_raw_msg_abstract_handler_t raw_handler;
 } zerv_msg_inst_t;
 
+struct zerv_topic_subscriber;
 typedef struct {
 	const char *name;
 	struct k_heap *heap;
@@ -113,7 +115,20 @@ typedef struct {
 	zerv_cmd_inst_t **cmd_instances;
 	size_t msg_instance_cnt;
 	zerv_msg_inst_t **msg_instances;
+	size_t topic_subscribers_cnt;
+	struct zerv_topic_subscriber **topic_subscriber_instances;
+	sys_slist_t **topic_subscriber_lists;
 } zervice_t;
+
+typedef zerv_rc_t (*zerv_msg_function_t)(const zervice_t *serv, zerv_msg_inst_t *msg_instance,
+					 size_t client_msg_params_len,
+					 const void *client_msg_params);
+
+typedef struct zerv_topic_subscriber {
+	sys_snode_t node;
+	zerv_msg_inst_t *msg_instance;
+	const zervice_t *serv;
+} zerv_topic_subscriber_t;
 
 /**
  * @brief Used internally to store an event that is to be handled by the zervice.
@@ -162,6 +177,9 @@ zerv_rc_t zerv_internal_client_message_handler(const zervice_t *serv, zerv_msg_i
 					       size_t client_msg_params_len,
 					       const void *client_msg_params);
 
+zerv_rc_t zerv_internal_emit_topic(sys_slist_t *subscribers, size_t params_size,
+				   const void *params);
+
 void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
 		   int (*on_init_cb)(void));
 
@@ -177,7 +195,18 @@ void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
 
 #define __ZERV_MSG_ID_DECL(msg_name) __##msg_name##_id
 
+#define __ZERV_TOPIC_MSG_ID_DECL(topic_msg_name, zervice_name)                                     \
+	__##zervice_name##_##topic_msg_name##_id
+
 #define __ZERV_CMD_INSTANCE_POINTER(cmd_name) &__##cmd_name
+
+#define __ZERV_TOPIC_MSG_INSTANCE_POINTER(topic_msg_name, zervice_name)                            \
+	&__##zervice_name##_##topic_msg_name
+
+#define __ZERV_TOPIC_MSG_EXTERN(topic_msg_name, zervice_name)                                      \
+	extern zerv_topic_subscriber_t __##zervice_name##_##topic_msg_name
+
+#define __ZERV_SUBSCRIBED_TOPIC_POINTER(topic_name) &topic_name##_subscribers
 
 #define __ZERV_DEFINE_CMD_INSTANCE_LIST(zervice, ...)                                              \
 	__unused static zerv_cmd_inst_t *zervice##_cmd_instances[] = {                             \
@@ -187,6 +216,23 @@ void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
 	__unused static zerv_msg_inst_t *zervice##_msg_instances[] = {                             \
 		FOR_EACH_NONEMPTY_TERM(__ZERV_CMD_INSTANCE_POINTER, (, ), __VA_ARGS__)};
 
+#define FOR_EACH_FIXED_NONEMPTY_TERM(F, term, fixed, ...)                                          \
+	COND_CODE_0(/* are there zero non-empty arguments ? */                                     \
+		    NUM_VA_ARGS_LESS_1(                                                            \
+			    LIST_DROP_EMPTY(__VA_ARGS__, _)), /* if so, expand to nothing */       \
+		    (),                                       /* otherwise, expand to: */          \
+		    (/* FOR_EACH() on nonempty elements, */                                        \
+		     FOR_EACH_FIXED_ARG(                                                           \
+			     F, term, fixed,                                                       \
+			     LIST_DROP_EMPTY(__VA_ARGS__)) /* plus a final terminator */           \
+		     __DEBRACKET term))
+
+#define __ZERV_DEFINE_TOPIC_MSG_INSTANCE_LIST(zervice, ...)                                        \
+	FOR_EACH_FIXED_NONEMPTY_TERM(__ZERV_TOPIC_MSG_EXTERN, (;), zervice, __VA_ARGS__);          \
+	__unused static zerv_topic_subscriber_t *zervice##_topic_subscriber_instances[] = {        \
+		FOR_EACH_FIXED_NONEMPTY_TERM(__ZERV_TOPIC_MSG_INSTANCE_POINTER, (), zervice,       \
+					     __VA_ARGS__)};
+
 #define __ZERV_GET_CMD_INPUT(cmd_name, zervice)                                                    \
 	static inline cmd_name##_param_t *zerv_get_##cmd_name##_params(void)                       \
 	{                                                                                          \
@@ -194,9 +240,41 @@ void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
 			->client_req_params.data;                                                  \
 	}
 
+#define __ZERV_DEFINE_SUBSCRIBED_TOPICS_LIST(zervice, ...)                                         \
+	__unused static sys_slist_t *zervice##_subscribed_topics[] __aligned(4) = {                \
+		FOR_EACH_NONEMPTY_TERM(__ZERV_SUBSCRIBED_TOPIC_POINTER, (, ), __VA_ARGS__)};
+
 #define __ZERV_GET_CMD_INPUT_DEF(zervice, ...)                                                     \
 	FOR_EACH_FIXED_ARG(__ZERV_GET_CMD_INPUT, (), zervice, __VA_ARGS__)
 
 #define __zerv_event_t_INIT(name) &__zerv_event_##name
 
+#define __ZERV_MSG_ID_OFFSET 0
+#define __ZERV_MSG_LIST(name, messages...)                                                         \
+	__ZERV_DEFINE_MSG_INSTANCE_LIST(name, messages)                                            \
+	enum __##name##_msgs_e                                                                     \
+	{                                                                                          \
+		__##name##_MSG_ID_OFFSET = __ZERV_MSG_ID_OFFSET,                                   \
+		FOR_EACH_NONEMPTY_TERM(__ZERV_MSG_ID_DECL, (, ), messages) __##name##_msg_cnt      \
+	}
+
+#define __ZERV_CMD_ID_OFFSET 10000
+#define __ZERV_CMD_LIST(name, commands...)                                                         \
+	__ZERV_DEFINE_CMD_INSTANCE_LIST(name, commands)                                            \
+	enum __##name##_cmds_e                                                                     \
+	{                                                                                          \
+		__##name##_CMD_ID_OFFSET = __ZERV_CMD_ID_OFFSET,                                   \
+		FOR_EACH_NONEMPTY_TERM(__ZERV_CMD_ID_DECL, (, ), commands) __##name##_cmd_cnt      \
+	}
+
+#define __ZERV_TOPIC_MSG_ID_OFFSET 20000
+#define __ZERV_SUBSCRIBED_TOPICS_LIST(name, topics...)                                             \
+	__ZERV_DEFINE_SUBSCRIBED_TOPICS_LIST(name, topics)                                         \
+	__ZERV_DEFINE_TOPIC_MSG_INSTANCE_LIST(name, topics)                                        \
+	enum __##name##_topic_msgs_e                                                               \
+	{                                                                                          \
+		__##name##_TOPIC_MSG_ID_OFFSET = __ZERV_TOPIC_MSG_ID_OFFSET,                       \
+		FOR_EACH_FIXED_NONEMPTY_TERM(__ZERV_TOPIC_MSG_ID_DECL, (, ), name, topics)         \
+			__##name##_topic_msg_cnt                                                   \
+	}
 #endif // _ZERV_INTERNAL_H_

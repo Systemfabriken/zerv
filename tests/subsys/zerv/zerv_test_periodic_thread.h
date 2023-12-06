@@ -14,6 +14,8 @@
 #ifndef _ZERV_TEST_PERIODIC_THREAD_H_
 #define _ZERV_TEST_PERIODIC_THREAD_H_
 
+#include "zerv_msg_test_service.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/zerv/zerv.h>
 #include <zephyr/zerv/zerv_cmd.h>
@@ -26,6 +28,7 @@ extern struct k_sem init_finished_sem;
 ZERV_CMD_DECL(sync_timeout, ZERV_IN(unsigned int n), ZERV_OUT_EMPTY);
 ZERV_MSG_DECL(async_timeout, unsigned int n);
 
-ZERV_DECL(periodic_service, ZERV_CMDS(sync_timeout), ZERV_MSGS(async_timeout));
+ZERV_DECL(periodic_service, ZERV_CMDS(sync_timeout), ZERV_MSGS(async_timeout),
+	  ZERV_SUBSCRIBED_TOPICS(test_topic));
 
 #endif /* _ZERV_TEST_PERIODIC_THREAD_H_ */

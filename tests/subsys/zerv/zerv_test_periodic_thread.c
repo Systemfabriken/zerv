@@ -42,7 +42,7 @@ static void tick(void)
 	_period_counter++;
 }
 
-ZERV_DEF_PERIODIC_THREAD(periodic_service, 128, 1024, K_PRIO_PREEMPT(10), K_MSEC(100), init, tick);
+ZERV_DEF_PERIODIC_THREAD(periodic_service, 1024, 1024, K_PRIO_PREEMPT(10), K_MSEC(100), init, tick);
 
 ZERV_CMD_HANDLER_DEF(sync_timeout, in, out)
 {
@@ -57,4 +57,9 @@ ZERV_MSG_HANDLER_DEF(async_timeout, msg)
 	LOG_DBG("Received async_timeout: %u", msg->n);
 	_period_counter = 0;
 	_target_count = msg->n;
+}
+
+ZERV_TOPIC_HANDLER(periodic_service, test_topic, msg)
+{
+	LOG_DBG("Received test_topic: a=%d, b=%u, c=%c", msg->a, msg->b, msg->c);
 }

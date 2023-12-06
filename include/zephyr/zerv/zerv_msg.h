@@ -101,4 +101,4 @@
 #define ZERV_MSG_RAW(zervice, msg, retcode, size, data)                                            \
 	zerv_rc_t retcode = zerv_internal_client_message_handler(&zervice, &__##msg, size, data)
 
-#endif // _ZERV_MSG_H_
+#endif /* _ZERV_MSG_H_ */

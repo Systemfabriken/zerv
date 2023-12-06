@@ -545,3 +545,15 @@ ZTEST(zerv, test_periodic_thread)
 		PRINTLN("OK");
 	}
 }
+
+ZTEST(zerv, test_topic)
+{
+	PRINTLN("Sending emit_on_test_topic request");
+	{
+		ZERV_CALL(zerv_msg_test_service, emit_on_test_topic, rc, p_ret, 10, 20, 'a');
+		zassert_equal(rc, 0, NULL);
+		PRINTLN("OK");
+	}
+
+	k_sleep(K_MSEC(100));
+}

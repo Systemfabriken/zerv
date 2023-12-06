@@ -23,52 +23,49 @@
  * INCLUDES
  *===============================================================================================*/
 #include <zephyr/zerv/zerv_internal.h>
+#include <zephyr/sys/slist.h>
 
 /*=================================================================================================
  * ZERVICE MACROS
  *===============================================================================================*/
 
-#define ZERV_MSG_ID_OFFSET 0
-
+/**
+ * @brief Macro for appending message requests to a zervice.
+ *
+ * @param messages... The message requests to append to the zervice.
+ */
 #define ZERV_MSGS(messages...) messages
 
-#define ZERV_MSG_LIST(name, messages...)                                                           \
-	__ZERV_DEFINE_MSG_INSTANCE_LIST(name, messages)                                            \
-	enum __##name##_msgs_e                                                                     \
-	{                                                                                          \
-		__##name##_MSG_ID_OFFSET = ZERV_MSG_ID_OFFSET,                                     \
-		FOR_EACH_NONEMPTY_TERM(__ZERV_MSG_ID_DECL, (, ), messages) __##name##_msg_cnt      \
-	}
-
-#define ZERV_CMD_ID_OFFSET 10000
-
+/**
+ * @brief Macro for appending command requests to a zervice.
+ *
+ * @param cmds... The command requests to append to the zervice.
+ */
 #define ZERV_CMDS(cmds...) cmds
 
 /**
- * @brief Macro for adding commands to a zervice.
+ * @brief Macro for subscribing to topics.
  *
- * @param name The name of the zervice.
- * @param commands... The commands to be added to the zervice.
+ * @param topics... The topics to subcribe to.
  */
-#define ZERV_CMD_LIST(name, commands...)                                                           \
-	__ZERV_DEFINE_CMD_INSTANCE_LIST(name, commands)                                            \
-	enum __##name##_cmds_e                                                                     \
-	{                                                                                          \
-		__##name##_CMD_ID_OFFSET = ZERV_CMD_ID_OFFSET,                                     \
-		FOR_EACH_NONEMPTY_TERM(__ZERV_CMD_ID_DECL, (, ), commands) __##name##_cmd_cnt      \
-	}
+#define ZERV_SUBSCRIBED_TOPICS(topics...) topics
 
 /**
  * @brief Macro for declaring a zervice in a header file.
  *
  * @param name The name of the service.
+ * @param zerv_cmds... The commands of the service, provided as a list of command names.
+ * @param zerv_msgs... The messages of the service, provided as a list of message names.
+ * @param subscribed_topics... The topics that the service subscribes to, provided as a list of
+ * topic names.
  *
  * @note The requests must be declared before the service. The service needs to be defined in the
  * source file
  */
-#define ZERV_DECL(name, zerv_cmds, zerv_msgs)                                                      \
-	ZERV_MSG_LIST(name, zerv_msgs);                                                            \
-	ZERV_CMD_LIST(name, zerv_cmds);                                                            \
+#define ZERV_DECL(name, zerv_cmds, zerv_msgs, subscribed_topics)                                   \
+	__ZERV_MSG_LIST(name, zerv_msgs);                                                          \
+	__ZERV_CMD_LIST(name, zerv_cmds);                                                          \
+	__ZERV_SUBSCRIBED_TOPICS_LIST(name, subscribed_topics);                                    \
 	extern const zervice_t name
 
 /**
@@ -91,6 +88,10 @@
 		.cmd_instances = zervice_name##_cmd_instances,                                     \
 		.msg_instance_cnt = __##zervice_name##_msg_cnt,                                    \
 		.msg_instances = zervice_name##_msg_instances,                                     \
+		.topic_subscribers_cnt =                                                           \
+			__##zervice_name##_topic_msg_cnt - __ZERV_TOPIC_MSG_ID_OFFSET - 1,         \
+		.topic_subscriber_instances = zervice_name##_topic_subscriber_instances,           \
+		.topic_subscriber_lists = zervice_name##_subscribed_topics,                        \
 	};
 
 /**

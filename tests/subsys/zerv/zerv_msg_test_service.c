@@ -10,6 +10,7 @@ K_SEM_DEFINE(cmp_msg_2_sem, 0, 1);
 LOG_MODULE_REGISTER(zerv_msg_test_service, LOG_LEVEL_DBG);
 
 ZERV_DEF_THREAD(zerv_msg_test_service, 512, 2048, K_PRIO_PREEMPT(10), NULL);
+ZERV_TOPIC_DEF(test_topic);
 
 ZERV_MSG_HANDLER_DEF(print_msg, param)
 {
@@ -44,4 +45,11 @@ ZERV_MSG_RAW_HANDLER_DEF(raw_msg, size, data)
 	zassert_equal(size, 12, "size is not equal");
 	zassert_mem_equal(data, "Hello World!", 12, "data is not equal");
 	k_sem_give(&print_msg_sem);
+}
+
+ZERV_CMD_HANDLER_DEF(emit_on_test_topic, in, out)
+{
+	LOG_INF("emit_on_test_topic: a=%d, b=%u, c=%c", in->a, in->b, in->c);
+	ZERV_TOPIC_EMIT(test_topic, in->a, in->b, in->c);
+	return 0;
 }

@@ -1,6 +1,8 @@
 #ifndef _ZERV_TEST_SERVICE_H_
 #define _ZERV_TEST_SERVICE_H_
 
+#include "zerv_msg_test_service.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/zerv/zerv.h>
 #include <zephyr/zerv/zerv_cmd.h>
@@ -29,6 +31,6 @@ ZERV_MSG_DECL(test_msg, char str[30], int32_t a, int32_t b);
 // Declare the service.
 ZERV_DECL(zerv_test_service,
 	  ZERV_CMDS(get_hello_world, echo, fail, read_hello_world, print_hello_world),
-	  ZERV_MSGS(test_msg));
+	  ZERV_MSGS(test_msg), ZERV_SUBSCRIBED_TOPICS(test_topic));
 
 #endif // _ZERV_TEST_SERVICE_H_

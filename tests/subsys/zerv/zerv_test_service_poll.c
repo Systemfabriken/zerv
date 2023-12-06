@@ -64,3 +64,8 @@ ZERV_CMD_HANDLER_DEF(fail2, req, resp)
 	LOG_DBG("Received request: dummy: %d", req->dummy);
 	return ZERV_RC_ERROR;
 }
+
+ZERV_TOPIC_HANDLER(zerv_poll_service_2, test_topic, msg)
+{
+	LOG_DBG("Received test_topic: a=%d, b=%u, c=%c", msg->a, msg->b, msg->c);
+}

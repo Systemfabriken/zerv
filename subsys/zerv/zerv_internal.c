@@ -136,6 +136,39 @@ zerv_rc_t zerv_internal_client_message_handler(const zervice_t *serv, zerv_msg_i
 	return ZERV_RC_OK;
 }
 
+zerv_rc_t zerv_internal_emit_topic(sys_slist_t *subscribers, size_t params_size, const void *params)
+{
+	if (subscribers == NULL || params == NULL) {
+		return ZERV_RC_NULLPTR;
+	}
+
+	LOG_DBG("Emitting topic to %d subscribers", sys_slist_len(subscribers));
+	LOG_DBG("Topic subscriber list: %p", subscribers);
+
+	sys_snode_t *node = sys_slist_peek_head(subscribers);
+	while (node) {
+		zerv_topic_subscriber_t *subscriber =
+			CONTAINER_OF(node, zerv_topic_subscriber_t, node);
+
+		LOG_DBG("Emitting event to %s on %s", subscriber->msg_instance->name,
+			subscriber->serv->name);
+
+		if (subscriber->msg_instance != NULL && subscriber->serv != NULL) {
+			zerv_rc_t rc = zerv_internal_client_message_handler(
+				subscriber->serv, subscriber->msg_instance, params_size, params);
+			if (rc != ZERV_RC_OK) {
+				LOG_WRN("Failed to emit topic %s on %s (%i) %s",
+					subscriber->msg_instance->name, subscriber->serv->name, rc,
+					strerror(-rc));
+			}
+		}
+
+		node = sys_slist_peek_next(node);
+	}
+
+	return ZERV_RC_OK;
+}
+
 /*=================================================================================================
  * PUBLIC FUNCTION DEFINITIONS
  ================================================================================================*/
@@ -155,15 +188,15 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 		return ZERV_RC_NULLPTR;
 	}
 
-	LOG_DBG("Handling on %s", serv->name);
+	LOG_DBG("Handling request %d on %s", request->id, serv->name);
 
-	if (request->id < ZERV_CMD_ID_OFFSET && request->id > ZERV_MSG_ID_OFFSET) {
-		if (request->id >= serv->cmd_instance_cnt + ZERV_CMD_ID_OFFSET ||
+	if (request->id < __ZERV_CMD_ID_OFFSET && request->id > __ZERV_MSG_ID_OFFSET) {
+		if (request->id >= serv->cmd_instance_cnt + __ZERV_CMD_ID_OFFSET ||
 		    request->client_req_params.data_len == 0) {
 			return ZERV_RC_ERROR;
 		}
 		zerv_msg_inst_t *msg_inst =
-			serv->msg_instances[request->id - ZERV_MSG_ID_OFFSET - 1];
+			serv->msg_instances[request->id - __ZERV_MSG_ID_OFFSET - 1];
 		if (msg_inst->is_raw) {
 			msg_inst->raw_handler(request->client_req_params.data_len,
 					      request->client_req_params.data);
@@ -171,13 +204,13 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 			msg_inst->handler(request->client_req_params.data);
 		}
 		return 0;
-	} else if (request->id > ZERV_CMD_ID_OFFSET) {
-		if (request->id >= serv->cmd_instance_cnt + ZERV_CMD_ID_OFFSET ||
+	} else if (request->id < __ZERV_TOPIC_MSG_ID_OFFSET && request->id > __ZERV_CMD_ID_OFFSET) {
+		if (request->id >= serv->cmd_instance_cnt + __ZERV_CMD_ID_OFFSET ||
 		    request->response_sem == NULL || request->client_req_params.data_len == 0) {
 			return ZERV_RC_ERROR;
 		}
 
-		zerv_rc_t rc = serv->cmd_instances[request->id - ZERV_CMD_ID_OFFSET - 1]->handler(
+		zerv_rc_t rc = serv->cmd_instances[request->id - __ZERV_CMD_ID_OFFSET - 1]->handler(
 			request->client_req_params.data, request->resp);
 		if (rc < ZERV_RC_OK) {
 			LOG_ERR("Failed to handle request on %s", serv->name);
@@ -185,6 +218,18 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 		request->rc = rc;
 		k_sem_give(request->response_sem);
 		return rc;
+	} else if (request->id > __ZERV_TOPIC_MSG_ID_OFFSET) {
+		LOG_DBG("Handling topic message on %s", serv->name);
+		if (request->id > serv->topic_subscribers_cnt + __ZERV_TOPIC_MSG_ID_OFFSET ||
+		    request->client_req_params.data_len == 0) {
+			return ZERV_RC_ERROR;
+		}
+
+		zerv_topic_subscriber_t *subscriber =
+			serv->topic_subscriber_instances[request->id - __ZERV_TOPIC_MSG_ID_OFFSET -
+							 1];
+		subscriber->msg_instance->handler(request->client_req_params.data);
+		return 0;
 	}
 
 	return ZERV_RC_ERROR;
@@ -200,6 +245,18 @@ void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
 	struct k_poll_event events[zervice_events->event_cnt];
 	for (size_t i = 0; i < zervice_events->event_cnt; i++) {
 		memcpy(&events[i], zervice_events->events[i]->event, sizeof(struct k_poll_event));
+	}
+
+	LOG_DBG("Starting %s", p_zervice->name);
+	for (size_t i = 0; i < p_zervice->topic_subscribers_cnt; i++) {
+		LOG_DBG("i = %d", i);
+		LOG_DBG("Adding %d subscribers to topic", p_zervice->topic_subscribers_cnt);
+		sys_slist_t *topic_subscriber_list = p_zervice->topic_subscriber_lists[i];
+		LOG_DBG("Topic subscriber list: %p", topic_subscriber_list);
+		zerv_topic_subscriber_t *sub = p_zervice->topic_subscriber_instances[i];
+		LOG_DBG("Adding subscriber %s", sub->msg_instance->name);
+		sys_slist_append(topic_subscriber_list, &sub->node);
+		LOG_DBG("Subscribers: %d", sys_slist_len(topic_subscriber_list));
 	}
 
 	LOG_DBG("Starting event processor for %s, num events %d", p_zervice->name,
