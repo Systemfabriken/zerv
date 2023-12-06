@@ -38,7 +38,7 @@ ZERV_MSG_HANDLER_DEF(cmp_msg_2, param)
 	k_sem_give(&cmp_msg_2_sem);
 }
 
-ZERV_RAW_MSG_HANDLER_DEF(raw_msg, size, data)
+ZERV_MSG_RAW_HANDLER_DEF(raw_msg, size, data)
 {
 	LOG_INF("raw_msg: size=%d, data=%s", size, data);
 	zassert_equal(size, 12, "size is not equal");

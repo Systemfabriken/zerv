@@ -32,7 +32,7 @@
 	} name##_param_t;                                                                          \
 	extern zerv_msg_inst_t __##name
 
-#define ZERV_RAW_MSG_DECL(name) extern zerv_msg_inst_t __##name
+#define ZERV_MSG_RAW_DECL(name) extern zerv_msg_inst_t __##name
 
 /**
  * @brief Macro for defining a zervice message handler function in a source file.
@@ -64,7 +64,7 @@
  * @note The message handler function must be defined in the same source file as the zervice
  * 	 definition.
  */
-#define ZERV_RAW_MSG_HANDLER_DEF(msg_name, size_name, data_name)                                   \
+#define ZERV_MSG_RAW_HANDLER_DEF(msg_name, size_name, data_name)                                   \
 	__unused static void __##msg_name##_raw_handler(size_t size_name, void *data_name);        \
 	zerv_msg_inst_t __##msg_name __aligned(4) = {                                              \
 		.name = #msg_name,                                                                 \
@@ -98,7 +98,7 @@
  * 	 The message struct must be allocated on the heap and the pointer to it is passed
  * 	 to the zervice.
  */
-#define ZERV_RAW_MSG(zervice, msg, retcode, size, data)                                            \
+#define ZERV_MSG_RAW(zervice, msg, retcode, size, data)                                            \
 	zerv_rc_t retcode = zerv_internal_client_message_handler(&zervice, &__##msg, size, data)
 
 #endif // _ZERV_MSG_H_
