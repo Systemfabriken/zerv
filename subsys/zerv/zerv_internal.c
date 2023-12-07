@@ -193,6 +193,7 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 	if (request->id < __ZERV_CMD_ID_OFFSET && request->id > __ZERV_MSG_ID_OFFSET) {
 		if (request->id >= serv->cmd_instance_cnt + __ZERV_CMD_ID_OFFSET ||
 		    request->client_req_params.data_len == 0) {
+			k_heap_free(serv->heap, request);
 			return ZERV_RC_ERROR;
 		}
 		zerv_msg_inst_t *msg_inst =
@@ -203,6 +204,7 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 		} else {
 			msg_inst->handler(request->client_req_params.data);
 		}
+		k_heap_free(serv->heap, request);
 		return 0;
 	} else if (request->id < __ZERV_TOPIC_MSG_ID_OFFSET && request->id > __ZERV_CMD_ID_OFFSET) {
 		if (request->id >= serv->cmd_instance_cnt + __ZERV_CMD_ID_OFFSET ||
@@ -222,6 +224,7 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 		LOG_DBG("Handling topic message on %s", serv->name);
 		if (request->id > serv->topic_subscribers_cnt + __ZERV_TOPIC_MSG_ID_OFFSET ||
 		    request->client_req_params.data_len == 0) {
+			k_heap_free(serv->heap, request);
 			return ZERV_RC_ERROR;
 		}
 
@@ -229,6 +232,7 @@ zerv_rc_t zerv_handle_request(const zervice_t *serv, zerv_request_t *request)
 			serv->topic_subscriber_instances[request->id - __ZERV_TOPIC_MSG_ID_OFFSET -
 							 1];
 		subscriber->msg_instance->handler(request->client_req_params.data);
+		k_heap_free(serv->heap, request);
 		return 0;
 	}
 

@@ -498,7 +498,10 @@ ZTEST(zerv, test_msg)
 	PRINTLN("Sending print_msg request");
 	{
 		char *msg = "Hello World!";
-		ZERV_MSG_RAW(zerv_msg_test_service, raw_msg, rc, strlen(msg), msg);
+		size_t msg_len = strlen(msg);
+		PRINTLN("Sending print_msg_raw request, len: %d", msg_len);
+
+		ZERV_MSG_RAW(zerv_msg_test_service, raw_msg, rc, msg_len, msg);
 		zassert_equal(rc, 0, NULL);
 		k_sem_take(&print_msg_sem, K_FOREVER);
 		PRINTLN("OK");
