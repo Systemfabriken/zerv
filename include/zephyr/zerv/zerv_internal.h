@@ -277,4 +277,17 @@ void __zerv_thread(const zervice_t *p_zervice, zerv_events_t *zervice_events,
 		FOR_EACH_FIXED_NONEMPTY_TERM(__ZERV_TOPIC_MSG_ID_DECL, (, ), name, topics)         \
 			__##name##_topic_msg_cnt                                                   \
 	}
+
+#define __ZERV_SAFE_K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj,          \
+						    _event_tag, _member)                           \
+	{                                                                                          \
+		.tag = _event_tag,                                                                 \
+		.type = _event_type,                                                               \
+		.state = K_POLL_STATE_NOT_READY,                                                   \
+		.mode = _event_mode,                                                               \
+		.unused = 0,                                                                       \
+		{                                                                                  \
+			._member = _event_obj,                                                     \
+		},                                                                                 \
+	}
 #endif // _ZERV_INTERNAL_H_

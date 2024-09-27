@@ -60,8 +60,8 @@ struct sub {
  * @param sub_name The name of the subscriber.
  */
 #define SUB_K_POLL_EVENT_INITIALIZER(sub_name)                                                     \
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,  \
-					sub_name.fifo, 0)
+	__ZERV_SAFE_K_POLL_EVENT_STATIC_INITIALIZER(                                               \
+		K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, sub_name.fifo, 0, fifo)
 
 /**
  * @brief Wait for data from a publisher.

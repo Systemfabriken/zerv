@@ -7,11 +7,12 @@ LOG_MODULE_REGISTER(zerv_poll_test, LOG_LEVEL_DBG);
 
 ZERV_DEF(zerv_poll_service_1, 128);
 ZERV_EVENT_DEF(zerv_poll_service_1_event, K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,
-	       &__zerv_poll_service_1_fifo);
+	       &__zerv_poll_service_1_fifo, fifo);
 
 K_SEM_DEFINE(event_sem, 0, 1);
 K_SEM_DEFINE(event_sem_response, 0, 1);
-ZERV_EVENT_DEF(event_sem_handler, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, &event_sem);
+ZERV_EVENT_DEF(event_sem_handler, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY, &event_sem,
+	       sem);
 
 ZERV_DEF_THREAD(zerv_poll_service_2, 128, 256, 0, NULL, zerv_poll_service_1_event,
 		event_sem_handler);

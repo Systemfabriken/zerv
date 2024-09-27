@@ -111,8 +111,9 @@
 #define ZERV_DEF_THREAD(zervice, heap_size, stack_size, prio, on_init_cb, zerv_events...)          \
 	ZERV_DEF(zervice, heap_size);                                                              \
 	static const struct k_poll_event __##zervice##_k_poll_event =                              \
-		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,                   \
-						K_POLL_MODE_NOTIFY_ONLY, &__##zervice##_fifo, 0);  \
+		__ZERV_SAFE_K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,       \
+							    K_POLL_MODE_NOTIFY_ONLY,               \
+							    &__##zervice##_fifo, 0, fifo);         \
 	static zerv_event_t __zerv_event_##zervice = {                                             \
 		.event = &__##zervice##_k_poll_event, .handler = NULL, .type = 0};                 \
 	static zerv_event_t *__##zervice##_events[] = {                                            \
@@ -153,7 +154,7 @@
 	}                                                                                          \
 	static K_TIMER_DEFINE(__##zervice##_timer, __##zervice##_periodic_timer_expired, NULL);    \
 	ZERV_EVENT_DEF(__##zervice##_event, K_POLL_TYPE_SEM_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,    \
-		       &__##zervice##_sem);                                                        \
+		       &__##zervice##_sem, sem);                                                   \
 	ZERV_EVENT_HANDLER_DEF(__##zervice##_event, obj)                                           \
 	{                                                                                          \
 		struct k_sem *sem = (struct k_sem *)obj;                                           \
@@ -179,17 +180,27 @@
  *===============================================================================================*/
 
 /**
- * @brief Macro for declaring a k_poll_event that is to be handled by a zervice.
+ * @brief Macro for defining a zervice event.
  *
  * @param name The name of the event.
- * @param _event_type The type of the event. Should be K_POLL_TYPE_*.
- * @param _event_mode The mode of the event. Should be K_POLL_MODE_*.
- * @param _event_obj The object of the event. Should be a pointer to a supported k_poll_event
- * object.
+ * @param _event_type The type of the event.
+ * @param _event_mode The mode of the event.
+ * @param _event_obj The object of the event.
+ * @param _member The member of the event.
+ *
+ * @note depending on the event type _member must be associated with the correct union member.
+ *
+ * For K_POLL_TYPE_SEM_AVAILABLE: sem
+ * For K_POLL_TYPE_SIGNAL: signal
+ * For K_POLL_TYPE_FIFO_DATA_AVAILABLE: fifo
+ * For K_POLL_TYPE_DATA_AVAILABLE: queue
+ * For K_POLL_TYPE_MSGQ_DATA_AVAILABLE: msgq
+ * For K_POLL_TYPE_PIPE_DATA_AVAILABLE: pipe (if CONFIG_PIPES is enabled)
  */
-#define ZERV_EVENT_DEF(name, _event_type, _event_mode, _event_obj)                                 \
+#define ZERV_EVENT_DEF(name, _event_type, _event_mode, _event_obj, _member)                        \
 	static const struct k_poll_event __##name##_event =                                        \
-		K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj, 0);          \
+		__ZERV_SAFE_K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj,  \
+							    0, _member);                           \
 	static void __##name##_event_handler(void *obj);                                           \
 	static zerv_event_t __zerv_event_##name = {.event = &__##name##_event,                     \
 						   .handler = __##name##_event_handler,            \
@@ -208,9 +219,10 @@
  *
  * @param zervice The name of the zervice.
  */
-#define ZERV_K_POLL_EVENT_INITIALIZER(zervice)                                                     \
-	K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE, K_POLL_MODE_NOTIFY_ONLY,  \
-					&__##zervice##_fifo, 0)
+#define __ZERV_K_POLL_EVENT_INITIALIZER(zervice)                                                   \
+	__ZERV_SAFE_K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,               \
+						    K_POLL_MODE_NOTIFY_ONLY, &__##zervice##_fifo,  \
+						    0, fifo)
 
 /*=================================================================================================
  * PUBLIC FUNCTION DECLARATIONS
