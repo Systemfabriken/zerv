@@ -45,13 +45,13 @@
  */
 #define ZERV_MSG_HANDLER_DEF(msg_name, params)                                                     \
 	__unused static void __##msg_name##_handler(const msg_name##_param_t *params);             \
-	zerv_msg_inst_t __##msg_name __aligned(4) = {                                              \
-		.name = #msg_name,                                                                 \
-		.id = __##msg_name##_id,                                                           \
-		.is_locked = ATOMIC_INIT(false),                                                   \
-		.handler = (zerv_msg_abstract_handler_t)__##msg_name##_handler,                    \
-		.is_raw = false,                                                                   \
-		.raw_handler = NULL};                                                              \
+	zerv_msg_inst_t __##msg_name                                                               \
+		__aligned(4) = {.name = #msg_name,                                                 \
+				.id = __##msg_name##_id,                                           \
+				.is_locked = ATOMIC_INIT(false),                                   \
+				.handler = (zerv_msg_abstract_handler_t)__##msg_name##_handler,    \
+				.is_raw = false,                                                   \
+				.raw_handler = NULL};                                              \
 	void __##msg_name##_handler(const msg_name##_param_t *params)
 
 /**
@@ -83,8 +83,10 @@
  * @brief Macro for sending a message to a zervice.
  */
 #define ZERV_MSG(zervice, msg, retcode, params...)                                                 \
-	zerv_rc_t retcode = zerv_internal_client_message_handler(                                  \
-		&zervice, &__##msg, sizeof(msg##_param_t), &(msg##_param_t){params})
+	for (bool __loop = true; __loop;)                                                          \
+		for (zerv_rc_t retcode = zerv_internal_client_message_handler(                     \
+			     &zervice, &__##msg, sizeof(msg##_param_t), &(msg##_param_t){params}); \
+		     __loop; __loop = false)
 
 /**
  * @brief Macro for sending a message to a zervice with a pointer to a message struct.
@@ -99,6 +101,9 @@
  * 	 to the zervice.
  */
 #define ZERV_MSG_RAW(zervice, msg, retcode, size, data)                                            \
-	zerv_rc_t retcode = zerv_internal_client_message_handler(&zervice, &__##msg, size, data)
+	for (bool __loop = true; __loop;)                                                          \
+		for (zerv_rc_t retcode =                                                           \
+			     zerv_internal_client_message_handler(&zervice, &__##msg, size, data); \
+		     __loop; __loop = false)
 
 #endif /* _ZERV_MSG_H_ */

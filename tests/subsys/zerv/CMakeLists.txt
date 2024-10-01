@@ -12,6 +12,7 @@ target_sources(app PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/zerv_test_service_poll.c
   ${CMAKE_CURRENT_SOURCE_DIR}/zerv_msg_test_service.c
   ${CMAKE_CURRENT_SOURCE_DIR}/zerv_test_periodic_thread.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/zerv_test_supervised_service.c
 )
 
 target_include_directories(app PRIVATE 

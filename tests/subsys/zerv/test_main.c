@@ -5,6 +5,7 @@
 #include "zerv_test_service_poll.h"
 #include "zerv_msg_test_service.h"
 #include "zerv_test_periodic_thread.h"
+#include "zerv_test_supervised_service.h"
 
 #include <zephyr/zerv/zerv.h>
 #include <zephyr/zerv/zerv_msg.h>
@@ -205,7 +206,7 @@ void test_polling_thread(void)
 K_THREAD_DEFINE(test_polling_thread_id, 256, (k_thread_entry_t)test_polling_thread, NULL, NULL,
 		NULL, 5, 0, 0);
 
-ZTEST(zerv, test_polling)
+ZTEST(zerv, test_1_polling)
 {
 	// Exit all the threads
 	polling_test_2 = true;
@@ -260,7 +261,7 @@ ZTEST(zerv, test_polling)
 	zassert_mem_equal(sub_4_msg, msg, strlen(msg) + 1, NULL);
 }
 
-ZTEST(zerv, test_no_subscribers)
+ZTEST(zerv, test_2_no_subscribers)
 {
 	// Exit all the threads
 	char msg[50] = "Testing no subscribers!";
@@ -270,7 +271,7 @@ ZTEST(zerv, test_no_subscribers)
 	zassert_equal(rc, 0, NULL);
 }
 
-ZTEST(zerv, test_pub_sub)
+ZTEST(zerv, test_3_pub_sub)
 {
 	k_sleep(K_MSEC(100));
 	// Test data
@@ -322,7 +323,7 @@ ZTEST(zerv, test_pub_sub)
 	zassert_equal(rc, -EINVAL, NULL);
 }
 
-ZTEST(zerv, test_pub_sub_no_buffer)
+ZTEST(zerv, test_4_pub_sub_no_buffer)
 {
 	k_sleep(K_MSEC(100));
 	// Test data
@@ -379,10 +380,10 @@ ZTEST(zerv, test_pub_sub_no_buffer)
 	k_sem_take(&sub5_sem, K_FOREVER);
 }
 
-ZTEST(zerv, hello_world)
+ZTEST(zerv, test_5_hello_world)
 {
+	ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20)
 	{
-		ZERV_CALL(zerv_test_service, get_hello_world, rc, p_ret, 10, 20);
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(p_ret->a, 10, NULL);
 		zassert_equal(p_ret->b, 20, NULL);
@@ -395,85 +396,85 @@ ZTEST(zerv, hello_world)
 		}
 	}
 
+	ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!")
 	{
-		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
 	}
 
+	ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World! 2")
 	{
-		ZERV_CALL(zerv_test_service, echo, rc, p_ret, "Hello World! 2");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World! 2"), 0, NULL);
 	}
 
+	ZERV_CALL(zerv_test_service, fail, rc, p_ret)
 	{
-		ZERV_CALL(zerv_test_service, fail, rc, p_ret);
 		zassert_equal(rc, ZERV_RC_ERROR, NULL);
 	}
 
+	ZERV_CALL(zerv_test_service, read_hello_world, rc, p_ret)
 	{
-		ZERV_CALL(zerv_test_service, read_hello_world, rc, p_ret);
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(p_ret->str, "Hello World!"), 0, NULL);
 	}
 
+	ZERV_CALL(zerv_test_service, print_hello_world, rc, p_ret)
 	{
-		ZERV_CALL(zerv_test_service, print_hello_world, rc, p_ret);
 		zassert_equal(rc, 0, NULL);
 	}
 
+	ZERV_MSG(zerv_test_service, test_msg, rc, "Hello World!", 10, 20)
 	{
-		ZERV_MSG(zerv_test_service, test_msg, rc, "Hello World!", 10, 20);
 		zassert_equal(rc, 0, NULL);
 		k_sem_take(&test_msg_sem, K_FOREVER);
 	}
 }
 
-ZTEST(zerv, event_processor_thread)
+ZTEST(zerv, test_6_event_processor_thread)
 {
 	PRINTLN("Sending echo1 request");
+	ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!")
 	{
-		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World!"), 0, NULL);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending echo2 request");
+	ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!")
 	{
-		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World!"), 0, NULL);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending echo1 request");
+	ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2")
 	{
-		ZERV_CALL(zerv_poll_service_1, echo1, rc, echo1_resp, "Hello World! 2");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo1_resp->str, "Hello World! 2"), 0, NULL);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending echo2 request");
+	ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2")
 	{
-		ZERV_CALL(zerv_poll_service_2, echo2, rc, echo2_resp, "Hello World! 2");
 		zassert_equal(rc, 0, NULL);
 		zassert_equal(strcmp(echo2_resp->str, "Hello World! 2"), 0, NULL);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending fail1 request");
+	ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret)
 	{
-		ZERV_CALL(zerv_poll_service_1, fail1, rc, p_ret);
 		zassert_equal(rc, ZERV_RC_ERROR, NULL);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending fail2 request");
+	ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret)
 	{
-		ZERV_CALL(zerv_poll_service_2, fail2, rc, p_ret);
 		zassert_equal(rc, ZERV_RC_ERROR, NULL);
 		PRINTLN("OK");
 	}
@@ -485,54 +486,54 @@ ZTEST(zerv, event_processor_thread)
 	PRINTLN("OK");
 }
 
-ZTEST(zerv, test_msg)
+ZTEST(zerv, test_7_msg)
 {
 	PRINTLN("Sending print_msg request");
+	ZERV_MSG(zerv_msg_test_service, print_msg, rc, "Hello World!")
 	{
-		ZERV_MSG(zerv_msg_test_service, print_msg, rc, "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		k_sem_take(&print_msg_sem, K_FOREVER);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending print_msg request");
-	{
-		char *msg = "Hello World!";
-		size_t msg_len = strlen(msg);
-		PRINTLN("Sending print_msg_raw request, len: %d", msg_len);
+	char *msg = "Hello World!";
+	size_t msg_len = strlen(msg);
+	PRINTLN("Sending print_msg_raw request, len: %d", msg_len);
 
-		ZERV_MSG_RAW(zerv_msg_test_service, raw_msg, rc, msg_len, msg);
+	ZERV_MSG_RAW(zerv_msg_test_service, raw_msg, rc, msg_len, msg)
+	{
 		zassert_equal(rc, 0, NULL);
 		k_sem_take(&print_msg_sem, K_FOREVER);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending cmp_msg_1 request");
+	ZERV_MSG(zerv_msg_test_service, cmp_msg_1, rc, 10, 20, 'a', "Hello World!")
 	{
-		ZERV_MSG(zerv_msg_test_service, cmp_msg_1, rc, 10, 20, 'a', "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		k_sem_take(&cmp_msg_1_sem, K_FOREVER);
 		PRINTLN("OK");
 	}
 
 	PRINTLN("Sending cmp_msg_2 request");
+	ZERV_MSG(zerv_msg_test_service, cmp_msg_2, rc, 10, 20, 'a', "Hello World!")
 	{
-		ZERV_MSG(zerv_msg_test_service, cmp_msg_2, rc, 10, 20, 'a', "Hello World!");
 		zassert_equal(rc, 0, NULL);
 		k_sem_take(&cmp_msg_2_sem, K_FOREVER);
 		PRINTLN("OK");
 	}
 }
 
-ZTEST(zerv, test_periodic_thread)
+ZTEST(zerv, test_8_periodic_thread)
 {
 	k_sem_give(&init_start_sem);
 	int ret = k_sem_take(&init_finished_sem, K_MSEC(100));
 	zassert_equal(ret, 0, NULL);
 
 	PRINTLN("Sending sync_timeout request");
+	ZERV_CALL(periodic_service, sync_timeout, rc, p_ret, 10)
 	{
-		ZERV_CALL(periodic_service, sync_timeout, rc, p_ret, 10);
 		zassert_equal(rc, 0, NULL);
 		ret = k_sem_take(&async_sem, K_MSEC(1100));
 		zassert_equal(ret, 0, NULL);
@@ -540,8 +541,8 @@ ZTEST(zerv, test_periodic_thread)
 	}
 
 	PRINTLN("Sending async_timeout request");
+	ZERV_MSG(periodic_service, async_timeout, rc, 10)
 	{
-		ZERV_MSG(periodic_service, async_timeout, rc, 10);
 		zassert_equal(rc, 0, NULL);
 		ret = k_sem_take(&async_sem, K_MSEC(1100));
 		zassert_equal(ret, 0, NULL);
@@ -549,14 +550,40 @@ ZTEST(zerv, test_periodic_thread)
 	}
 }
 
-ZTEST(zerv, test_topic)
+ZTEST(zerv, test_9_topic)
 {
 	PRINTLN("Sending emit_on_test_topic request");
+	ZERV_CALL(zerv_msg_test_service, emit_on_test_topic, rc, p_ret, 10, 20, 'a')
 	{
-		ZERV_CALL(zerv_msg_test_service, emit_on_test_topic, rc, p_ret, 10, 20, 'a');
 		zassert_equal(rc, 0, NULL);
 		PRINTLN("OK");
 	}
 
 	k_sleep(K_MSEC(100));
+}
+
+ZTEST(zerv, test_10_supervised_service)
+{
+	PRINTLN("Sending set_state request");
+	ZERV_CALL(zerv_test_supervised_service, set_state, rc, p_ret,
+		  ZERV_TEST_SUPERVICED_STATE_RUNNING)
+	{
+		zassert_equal(rc, 0, NULL);
+		PRINTLN("OK");
+	}
+
+	PRINTLN("Sending set_state request");
+	ZERV_CALL(zerv_test_supervised_service, set_state, rc, p_ret,
+		  ZERV_TEST_SUPERVICED_STATE_STOPPED)
+	{
+		zassert_equal(rc, 0, NULL);
+		PRINTLN("OK");
+	}
+
+	PRINTLN("Sending set_sampling_interval request");
+	ZERV_CALL(zerv_test_supervised_service, set_sampling_interval, rc, p_ret, 1000)
+	{
+		zassert_equal(rc, 0, NULL);
+		PRINTLN("OK");
+	}
 }

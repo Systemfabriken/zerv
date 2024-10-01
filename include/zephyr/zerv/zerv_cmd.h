@@ -115,10 +115,13 @@
  * format specified by the ZERV_IN macro used when declaring the command.
  */
 #define ZERV_CALL(zervice, cmd, retcode, p_ret, params...)                                         \
-	cmd##_ret_t __##cmd##_response;                                                            \
-	cmd##_ret_t *p_ret = &__##cmd##_response;                                                  \
-	zerv_rc_t retcode = zerv_internal_client_request_handler(                                  \
-		&zervice, &__##cmd, sizeof(cmd##_param_t), &(cmd##_param_t){params},               \
-		(void *)p_ret, sizeof(cmd##_ret_t));
+	for (bool __loop = true; __loop;)                                                          \
+		for (cmd##_ret_t __##cmd##_response = {0}; __loop;)                                \
+			for (cmd##_ret_t *p_ret = &__##cmd##_response; __loop;)                    \
+				for (zerv_rc_t retcode = zerv_internal_client_request_handler(     \
+					     &zervice, &__##cmd, sizeof(cmd##_param_t),            \
+					     &(cmd##_param_t){params}, (void *)p_ret,              \
+					     sizeof(cmd##_ret_t));                                 \
+				     __loop; __loop = false)
 
 #endif // _ZERV_CMD_H_
